@@ -1,0 +1,113 @@
+aws athena help
+ 
+aws athena list-databases help
+ 
+aws athena list-databases \
+    --catalog-name AwsDataCatalog \
+    --region us-east-1
+	
+	
+Managing Athena Workgroups using AWS CLI
+----------------------------------------
+
+** Every workgroup should have an S3 bucket configured as 'query result location'.
+** All queries in Atena are executed within a workgroup and all the results of the
+   queries executed under the workgroup are saved in the configured S3 location. 
+
+aws athena list-work-groups \
+    --region us-east-1
+ 
+aws athena get-work-group \
+    --work-group primary \
+    --region us-east-1	
+	
+	
+Run Athena Queries using AWS CLI
+-----------------------------------
+
+aws athena start-query-execution help
+ 
+aws athena start-query-execution \
+    --query-string "SELECT count(*) FROM myretail.orders" \
+    --region us-east-1
+	
+# Capture query execution id
+ 
+aws athena get-query-execution help
+ 
+aws athena get-query-execution \
+    --query-execution-id 4631659e-e58d-49b8-b83e-8d137719d72e \
+    --region us-east-1
+	
+	
+Get Athena Table Metadata using AWS CLI
+---------------------------------------
+
+aws athena list-table-metadata help
+ 
+aws athena list-table-metadata \
+    --catalog-name AwsDataCatalog \
+    --database-name myretail \
+    --region us-east-1
+ 
+aws athena get-table-metadata help
+ 
+aws athena get-table-metadata \
+    --catalog-name AwsDataCatalog \
+    --database-name myretail \
+    --table-name orders \
+    --region us-east-1
+	
+	
+Run Athena Queries with custom location
+----------------------------------------
+
+aws athena start-query-execution help
+ 
+aws athena start-query-execution \
+    --query-string "SELECT count(*) FROM myretail.orders" \
+    --result-configuration OutputLocation=s3://itv-retail/myretail/order_count_awscli \
+    --region us-east-1
+ 
+aws athena get-query-execution \
+    --query-execution-id e303ff4d-bb46-4018-9c78-dc9bff90f718 \
+    --region us-east-1
+	
+	
+Drop Athena table using AWS CLI
+---------------------------------
+
+aws athena start-query-execution \
+    --query-string "DROP TABLE myretail.order_items" \
+    --region us-east-1
+ 
+aws athena get-query-execution \
+    --query-execution-id 34a18dde-b71a-4ea3-847f-cb10bc9b5c5a \
+    --region us-east-1
+ 
+aws s3 ls s3://itv-retail/myretail/order_items
+ 
+aws s3 rm s3://itv-retail/myretail/order_items/ --recursive
+ 
+aws s3 ls s3://itv-retail/myretail/	
+
+
+Run CTAS under Athena using AWS CLI
+--------------------------------------
+
+aws athena start-query-execution \
+    --query-string "CREATE TABLE myretail.order_items \
+        WITH ( \
+            format = 'TEXTFILE', \
+            external_location = 's3://itv-retail/myretail/order_items/', \
+            field_delimiter = ',' \
+        ) \
+        AS \
+        SELECT * FROM retail_db.order_items" \
+    --region us-east-1
+ 
+aws athena get-query-execution \
+    --query-execution-id 9eb94e4e-1613-43e7-a933-00453b169cf1 \
+    --region us-east-1
+ 
+aws s3 ls s3://itv-retail/myretail/order_items/

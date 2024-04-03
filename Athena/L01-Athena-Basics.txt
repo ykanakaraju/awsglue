@@ -1,0 +1,73 @@
+   Lab 1 - Create table using Amazon Athena Query editor interface
+  ------------------------------------------------------------------
+
+  1. Open Amazon Athena Console and lauch Query editor
+
+  2. Understand the basics:
+
+	2.1 You are, by default, connected to a Data Source called 'AwsDataCatalog'. This is the 'Glue Catalog'.
+            The databases and tables in Athena are integrated with AWS Glue.  
+
+	2.2 Amazon Athena use S3 to store query results. So you have to setup an S3 bucket to store Athena query results.
+	    Before you run your first query, you need to set up a query result location in Amazon S3.
+
+  3. Set up a query result location in Amazon S3
+	
+	3.1  Click on 'Settings' tab and click on 'Manage' button
+	3.2  Location of query result: <select an S3 bucket by clicking on Browse button> 
+
+
+  4. Create a table (and a database) from Amazon S3 bucket as data source.
+
+	4.1 Click on 'Create' button and select 'S3 bucket data'  (left menu)
+
+	4.2 Enter the details (as appropriate in your case):
+
+		Table details
+		   Table name: categories
+		Database configuration
+		   Create a database
+		   Database name: retail_db_1
+		Dataset
+		   Location of input data set: s3://ykr-datasets/retail_db/categories
+		Data format
+		   Table type: Apache Hive
+		   File format: CSV   (this format should match the S3 file format)
+		Column details
+	           `id` int, `type` int,`name` varchar(100)
+
+	4.3 Preview table query
+		-> Observe the table DDL created using HQL syntax. 
+
+	4.4 Click on 'Create table' button
+
+  5. Save the query
+	
+	When you create a table using the above step your DDL is displayed in a query tab.
+	You can save this query for later execution or for reference.
+
+        5.1 Click on the context menu on the query tab (verticle dots icon on the tab)
+        5.2 Click on 'Save as' option
+	5.3 Provide a name and save the query.
+
+	5.4 You can use this query whenever you want by clicking on 'Saved queries' tab.
+
+  6. Query the catalog table (that you created above)
+
+	6.1 Select the 'retail_db_1' database from the database option (on the left side dropdowns)
+	6.2 Run the following query in the query window:
+		select * from categories limit 10
+
+
+
+
+
+
+
+
+
+	
+
+ 
+		
+	

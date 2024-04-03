@@ -1,0 +1,88 @@
+
+
+  Lab 3:  Create table using Hive DDL command
+  -------------------------------------------
+  
+  ** NOTE: This lab is a continuation of Lab 2 **
+
+  1. Open Amazon Athena Console and lauch Query editor
+
+  2. Refresh the data by clicking on Refresh icon.
+
+  Now, let's try to create the 'customer' table (that we created in Lab 2 in 'retail_db_2' database)
+  in 'retail_db_1' database using Hive DDL command.
+
+  3. Select the 'retail_db_2' from the Database dropdown. 
+
+  4. Click on the context menu (verticle dots icon on the tab) of the 'customers' table
+     and select 'Generate table DDL' option
+
+  5. Copy the Hive 'CREATE EXTERNAL TABLE...' command that is generated. 
+
+  6. Change the database to 'ratail_db_1' in the dropdown. 
+
+  7. Copy the DDL command on a new query window and run it.  
+     This create a new table in 'ratail_db_1' database.
+
+  8. Query the the 'customers' table in the query window.
+
+	6.1 Select the 'retail_db_1' database from the database option (on the left side dropdowns)
+	6.2 Run the following query in the query window:
+		select * from customers limit 5
+
+
+
+
+
+CREATE EXTERNAL TABLE `customers`(
+  `col0` bigint, 
+  `col1` string, 
+  `col2` string, 
+  `col3` string, 
+  `col4` string, 
+  `col5` string, 
+  `col6` string, 
+  `col7` string, 
+  `col8` bigint)
+ROW FORMAT DELIMITED 
+  FIELDS TERMINATED BY ',' 
+STORED AS INPUTFORMAT 
+  'org.apache.hadoop.mapred.TextInputFormat' 
+OUTPUTFORMAT 
+  'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+LOCATION
+  's3://ykr-datasets/retail_db/customers/'
+TBLPROPERTIES (
+  'CrawlerSchemaDeserializerVersion'='1.0', 
+  'CrawlerSchemaSerializerVersion'='1.0', 
+  'UPDATED_BY_CRAWLER'='retail_crawler', 
+  'areColumnsQuoted'='false', 
+  'averageRecordSize'='75', 
+  'classification'='csv', 
+  'columnsOrdered'='true', 
+  'compressionType'='none', 
+  'delimiter'=',', 
+  'objectCount'='1', 
+  'recordCount'='12716', 
+  'sizeKey'='953719', 
+  'typeOfData'='file')
+
+
+
+ 
+
+		
+			
+
+
+
+
+
+
+
+
+	
+
+ 
+		
+	

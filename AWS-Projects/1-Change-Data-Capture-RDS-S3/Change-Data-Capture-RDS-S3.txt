@@ -1,0 +1,472 @@
+CDC :  RDS (MySQL) to S3
+------------------------
+
+  1. Go to RDS service
+
+  2. Create a new parameter group
+
+	2.1 Go to RDS service
+	2.2 Select 'Parameter groups' left-menu option.
+	2.3 Click on 'Create a new parameter group'
+		-> Parameter group family: mysql8.0
+		-> Group name: rdsmysqlpg
+		-> Description: Param group CDC Pipeline
+		-> Click on 'Create' button to create the parameter group
+	2.4 Select the Parameter group from the list.
+	2.5 Click on 'Edit Parameters' button	
+	2.6 Search for "binlog_format" and select the value to "ROW"
+	2.7 Click on 'Save Changes'
+
+	NOTE:  The Binary Log Format (binlog_format) ROW causes logging to be row based.
+
+  3. Setup an RDS Database
+
+	3.1	Open the RDS service and click on 'Create Database' button
+	
+	3.2 Create a Database with the following options:
+	
+		Choose a database creation method : Standard create
+		Engine options: MySQL  (this is our source endpoint)
+		Edition: MySQL Community
+		Version: MySQL 8.0.23
+		Templates: Free-tier
+		DB Instance Identifier: cdc-mysql-db-1
+		Credential Settings:
+			Master username : admin
+			Master password : Password123
+		DB instance class
+			Burstable classes : db.t2.micro
+		Storage: leave the defaults
+		Storage autoscaling: Uncheck the option for autoscaling
+		Connectivity		
+			Public access: Yes				
+			VPC security group : Choose existing (i.e default SG)
+			Availability Zone:  No Preference
+		Database Authentication: Password authentication
+		Additional Configuration
+			Database Options
+				Initial database name: leave blank
+				DB parameter groups: <Select the one we created in step 2>
+				-> This is required for MySQL to connect to DMS
+		Backup
+			Enable automated backups: check  
+			NOTE: Keep this checked (need this for CDC pipeline)
+		Maintenence
+			'Enable auto minor version upgrade': uncheck
+	    
+		Click on 'Create database' button.
+	
+	   --------------------------------------------------------------------
+        NOTE: In the above, we need to the parameter group and set the 
+	 	"binlog_format" to ROW in that parameter group.	
+	  
+        This is required for DMS to work properly in our use-case.
+
+	  	** For DBMS to work we need to two things in the above config:
+			1. Enable backup
+			2. The parameter group should have "binlog_format"  set to ROW	 
+ 	   ---------------------------------------------------------------------
+
+  4. Create two S3 Buckets
+
+	4.1 Bucket-Name: cdc-pyspark-full-load 
+		Region: us-east-1
+		Block all public access: uncheck
+		Click on the acknowledgement checkbox		
+		
+	4.2	Bucket Name: cdc-pyspark-final-output
+		Region: us-east-1
+
+  5. Create DMS replication instance
+
+	5.1 Open the Database Migration Service console
+	
+	5.2	Click on 'Replication instances' option from the left menu
+		Click on 'Create replication instance' button
+
+	5.3 Create Replication Instance with the following options:
+	
+		Name: cdc-rds-s3-pyspark (Name must be unique in your region)
+		Instance class: dms.t3.micro  
+		High Availability: Single-AZ
+		Storage: 5 GiB
+		VPC: select the default vpc from the dropdown.		
+
+		Click on 'Create' button
+		
+		* Note: this may take 5 to 10 minutes
+
+   6. Create DMS Source endpoint.
+
+	6.1	Click on 'Endpoints' option from the left-menu
+		Click on 'Create Endpoint' button.
+
+	6.2	Create source endpoint with the following options:
+		
+		Endpoint Type: Source Endpoint
+	    Check the option: Select RDS DB instance
+	    Select the instance created in Step 3
+
+		Endpoint Configuration
+			Details will be populated based on the selected instance.
+
+			Endpoint identifier: cdc-mysql-db-1    (i.e leave the default)
+
+			Access to endpoint database
+				Select 'Provide access information manually'
+				Check the details
+				Enter the password: Password123  (master password in step 3)
+				
+		Wait until your repication-instance status becomes 'Active'
+
+		Test endpoint connection
+			Select the VPC and the Replication instance (created in step 5)
+			Click on 'Run Test' button
+			Make sure the status comes out as 'successful'
+
+		Click on 'Create endpoint' button
+	
+  7. Create a DMS IAM Role (to be used in next step)
+
+	7.1	Open IAM service and click on 'Create role' button
+	7.2	Select 'DMS' as the service
+	7.3	Permissions
+			Attach 'AmazonS3FullAccess' policy
+	7.4	Creare Role
+			Role name: DMSDemoRole
+	7.5	Click on 'Create role' button.
+	7.6	Click on the created role
+	7.7	Copy the 'Role ARN' and save it (you need it in the next step)	
+
+  8. Create DMS Target Endpoint.	
+
+	8.1	Open the DMS service and click on 'Endpoints' option from the left-menu
+		Click on 'Create Endpoint' button.
+	8.2 Create target endpoint with the following options
+		
+		Endpoint Type: Target Endpoint
+		Endpoint Configuration
+			Endpoint identifier: cdc-s3
+			Target Engine: Amazon S3
+			Service access role ARN: Specify the ARN of the IAM role created in step 7.
+			Bucket Name: cdc-pyspark-full-load (Specify the bucket created in step 4)
+			Bucket Folder: leave blank  (you may specify one but we can use the bucket itself as well) 
+			
+	8.3	Test endpoint connection
+			Click on 'Run Test' button
+			Make sure the status comes out as 'successful'
+	8.4	Click on 'Create endpoint' button		
+    	
+  9. Download and install 'MySQL' (we need 'MySQL workbench')
+
+		Go to URL: https://www.mysql.com/downloads/
+		Click on 'MySQL Community (GPL) Downloads' link (towards end of the page)
+			URL: https://dev.mysql.com/downloads/
+		Click on 'MySQL Installer for Windows'
+			URL: https://dev.mysql.com/downloads/installer/
+		Click on the first "Download' button (size: 2.3 MB)  
+		Click on 'No thanks, just start my download.' link (no need to login/signup)
+
+  10. Connect to RDS and dump data
+
+	10.1 Open the RDS service from the console.
+		 Open the database instance created in step 3		
+		 Copy the endpoint (you need it to connect via MySQL workbench)	
+
+	10.2 Connect to the database instance from MySQL workbench
+		
+		Open the MySQL workbench
+		Click on the + button @ the right side of 'MySQL Connections'
+		This opens "Setup New Connections" dialog.
+		Create a New Connection:
+			Connection Name: Give some name (ex: cdc-pyspark)
+			Hostname: give the database endpoint here..
+			Username: Master username of the database (ex: admin)
+			Password: Master password (ex: Password123)
+			Click on "Test Connection" button (make sure its success)
+
+			NOTE:
+			-----
+			If your test is failing to connect, ensure that your security group
+			associated with the database, allows traffic from your local machine.
+
+			Go to RDS service and click on the RDS database 
+			In the "Connectivity & security" tab, click on the VPC security group (ex: default(sg-xxxx) )
+			Open the security group.
+			Click on "Edit Inbound rules" option under "Inbound rules" tab
+			Add a rule to allow "All traffic" from "any ip address" (i.e 0.0.0.0/0)
+			-> You may also add your IP only if you want to be more secure. 
+
+	10.2 Load some data into the database - Create a schema, table and insert some sample data
+	
+		Open the connection you created in the previous step
+		Copy the content from "DDL_LoadData_Script.sql" file and execute them in the MySQL Workbench.
+			schema: cdcdb
+			table: Persons
+		This loads data into the database.
+
+
+  11. Create a 'database migration task' for CDC full load.
+
+	11.1 Open the DMS service from management console.
+		 Click on 'Database migration tasks' from the left side menu.
+		 Click on "Create task" button
+		
+	11.2 Create 'Database migration task' with the following details:
+
+		Task identifier: cdc-pyspark
+		Replication instance : select the DMS instance created in step 5 
+		Source database endpoint : select the source endpoint created in step 6
+		Target database endpoint : select the target endpoint created in step 8
+		Migration type : select 'Migrate existing data and replicate ongoing changes'
+		Task settings :  Keep all defaults except for 'Maximum number of tables to load in parallel'
+			Advanced task settings 
+			  -> Full load tuning settings:
+				-> Maximum number of tables to load in parallel : 1	
+		Table mappings :
+			Click on 'Add new selection rule' button
+				Schema : Enter a scehma
+				Source name : cdcdb   (this is from the schema and tables you created from the dump in step 10)
+				Source table name: Persons
+				Action: include
+		Premigration assessment : no changes
+		Migration task startup configuration : Automatically on create
+
+	11.3 Click on 'Create Task' button.
+		 Wait until the status comes as 'Load complete, replication ongoing"
+
+		This will read the database and load the data into the S3 bucket.
+		Open S3 bucket, and check for the data file created in a directory with the name of the snapshot
+
+	11.4 Now make some modifications to the table data
+		
+		Open the MYSQL workbench 
+		Copy the content from "DML-Statements-Script.sql" file and execute them in the MySQL Workbench.
+		(This files contains a few few additional inserts, few update and delete statements)
+
+	11.5 The changes made to the database will be added to the S3
+		 Open S3 bucket, and check for the data file created with the changes made to the table data. 
+		
+  12. Stop the instances, otherwise the resources will be billed for the time used. 
+
+	12.1 Select the RDS database, Go to Actions and 'Stop temporarily' (no need to take a backup snapshot)
+		 Select the 'database migration task' and also stop it.
+
+  13. Create an IAM role for lambda with S3 and Glue Access
+		Role name: CTSLambdaDemoRole
+		Policies:
+			AmazonS3FullAccess
+			AWSGlueConsoleFullAccess 
+			CloudWatchFullAccess
+
+  14. Create a Lambda function, add a trigger and test it.
+       (to invoke lambda when a file is added to S3)
+
+	14.1 Open the Lambda service and click on 'Create funtion' button
+	14.2 Create the function with the following details:
+			Select "Author from scratch' option
+			Function name: cdc-rds-s3-glue-pyspark
+			Runtime: Python 3.9
+			Change default execution role: Use an existing role
+				Choose the role create in the the previous step (ex: CTSLambdaDemoRole)
+			Click on 'Create function' button. 
+
+	14.3 Add a Trigger to your lambda		
+			Bucket: cdc-pyspark-full-load (Select the bucket created in Step 4)
+			Event type: All object create events
+			Recursive invocation: Check  
+			(as we are reading from a different bucket, this is fine)
+
+	14.4 Test your Lambda function
+	
+		Go to the 'Code' tab		
+		Add a simple print statement inside the 'lambda_handler' function
+
+def lambda_handler(event, context):
+	print("hello from pyspark")
+
+	bucketName = event["Records"][0]["s3"]["bucket"]["name"]
+	fileName = event["Records"][0]["s3"]["object"]["key"]
+
+	print(bucketName, fileName)
+
+	return {
+		'statusCode': 200,
+		'body': json.dumps('Hello from Lambda!')
+	}
+
+		Click on 'Deploy' to save the changes
+		Add a Test event
+			Click on 'Test' button to create an event
+			Give some name (ex: lambda-test-event) and click 'Create' button
+			Template: s3-put
+		Click on 'Test' and see your function output in 'Execution results' tab.
+
+		Check the CloudWatch Logs
+			Open the 'CloudWatch' service and click on 'Logs' -> 'Log groups' menu.
+			Select you 'Log group' (ex: /aws/lambda/cdc-s3-glue-pyspark)
+			See the logs being created with function output
+			
+		Now, add a file to the S3 bucket
+			See the function being traggered again by adding new log entries.
+
+  15. Create an IAM role for Glue with S3 and Cloudwatch Access
+   
+		Name: GlueDemoRole
+		Attach the following policies to the role:
+			AmazonS3FullAccess 
+			CloudWatchFullAccess 
+	
+  16. Add a Glue job to read from an S3 bucket and write to an S3 bucket.
+	
+	16.1 Go to AWS Glue service
+	     Select 'Data Integration and ETL' -> AWS Glue Studio -> Jobs  menu option
+	
+	16.2 Create a job as described below:
+		
+		 Create job: Spark script editor
+		 Options: Create a new script with boilerplate code
+		 Click on 'create' button.
+		 
+		 Click on 'Job details' tab, and enter the following info:
+			Name: glue-cdc-pyspark-job
+			IAM role : GlueDemoRole
+			Type: Spark
+			Glue version : Glue 2.0 (Spark 2.4, Python 3)
+			Language: Python 3
+			Worker type: no change
+			Requested number of workers: 2
+			Generate job insights: uncheck
+			Number of retries: 1
+			Job timeout: 30
+			Advanced properties:
+				Script file name: Keep the default  (by default, this is the job name itself)
+				Script path: no change, keep default
+			* leave all other options as they are.
+			Click on 'Save' button.
+		
+		Open 'Script' tab		
+			Add the code mentioned in "glue_pyspark_script.py" script
+			** NOTE: Make sure your bucket paths are properly mentioned in the script **
+			
+		Click on 'Save' button.
+			
+  17. Invoke Glue job from Lambda function
+	
+	17.1 Add the code mentioned in "lambda_python_function.py" script in the lambda function
+	    (this is the final code that should be in the lambda)	
+
+	    NOTE: The CloudWatch log groups for "glue" are found in "/aws-glue/jobs/output"
+	 
+  18. Setup and run the entire pipeline
+
+	18.1 Delete the any old content, if present, from the S3 buckets
+	18.2 Start the RDS database service (if previously stopped) and connect to it using MySQL Workbench
+	     (refer to step 10 for details)
+	18.3 Truncate old data from the table and and insert new rows  
+	    (use DDL_LoadData_Script.sql script for insert commands)
+	18.4 Go to DMS service and "Restart" (not 'resume') the 'database migration task' (that was stopped before)
+			This triggers a full load causing a file to be created in the s3 bucket "cdc-pyspark-full-load"
+			This file added to the bucket triggers the lambda function
+			This lambda function invokes the "glue job"
+			The "Glue job" executes the pyspark script that reads from the S3 file and saves it to the output S3 bucket
+	18.5 Wait until the job is completed and data is loaded to output s3 bucket
+	18.6 Check the full load data being loaded to the output bucket
+	18.7 Now make some changes to the MySQL table (refer to DML-Statements-Script.sql for insert commands)
+			This causes the DMS service to add a new file to input S3 bucket.
+			This new bucket triggers the lambda function
+			This lambda function invokes the "glue job"
+			The "Glue job" executes the pyspark script that reads from the S3 file and saves it to the output S3 bucket.
+
+    
+	
+			
+
+===============================================================
+  Scripts
+-------------------------------------------------------
+   lambda_python_function.py
+-------------------------------------------------------
+import json
+import boto3
+
+def lambda_handler(event, context):    
+    
+    bucketName = event["Records"][0]["s3"]["bucket"]["name"]
+    fileName = event["Records"][0]["s3"]["object"]["key"]
+    
+    print(bucketName, fileName)
+        
+    glue = boto3.client('glue')
+
+    response = glue.start_job_run(
+        JobName = 'glue-cdc-pyspark-job',
+        Arguments = {
+            '--s3_target_path_key': fileName,
+            '--s3_target_path_bucket': bucketName
+        } 
+    )
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps('Hello from Lambda!')
+    }
+
+-------------------------------------------------------
+   glue_pyspark_script.py
+-------------------------------------------------------
+
+from awsglue.utils import getResolvedOptions
+import sys
+from pyspark.sql.functions import when
+from pyspark.sql import SparkSession
+from pyspark import StorageLevel
+
+args = getResolvedOptions(sys.argv,['s3_target_path_key','s3_target_path_bucket'])
+bucket = args['s3_target_path_bucket']
+fileName = args['s3_target_path_key']
+
+print(bucket, fileName)
+
+spark = SparkSession.builder.appName("CDC").getOrCreate()
+inputFilePath = f"s3a://{bucket}/{fileName}"
+finalFilePath = f"s3a://cdc-pyspark-final-output/output"
+finalFilePath2 = f"s3a://cdc-pyspark-final-output/output2"
+
+if "LOAD" in fileName:
+    #print("---- full load -----")
+    #print(fileName)
+    fldf = spark.read.csv(inputFilePath)
+    fldf = fldf.withColumnRenamed("_c0","id").withColumnRenamed("_c1","FullName").withColumnRenamed("_c2","City")
+    fldf.write.mode("overwrite").csv(finalFilePath)
+else:
+    #print("---- change data capture -----")
+    #print(fileName)
+    udf = spark.read.csv(inputFilePath)
+    
+    udf = udf.withColumnRenamed("_c0","action").withColumnRenamed("_c1","id").withColumnRenamed("_c2","FullName").withColumnRenamed("_c3","City")
+    
+    ffdf = spark.read.csv(finalFilePath)
+    
+    ffdf = ffdf.withColumnRenamed("_c0","id").withColumnRenamed("_c1","FullName").withColumnRenamed("_c2","City")
+    
+    for row in udf.collect(): 
+      
+      if row["action"] == 'U':
+        ffdf = ffdf.withColumn("FullName", when(ffdf["id"] == row["id"], row["FullName"]).otherwise(ffdf["FullName"]))      
+        ffdf = ffdf.withColumn("City", when(ffdf["id"] == row["id"], row["City"]).otherwise(ffdf["City"]))
+        
+      if row["action"] == 'I':
+        insertedRow = [list(row)[1:]]
+        columns = ['id', 'FullName', 'City']
+        newdf = spark.createDataFrame(insertedRow, columns)
+        ffdf = ffdf.union(newdf)
+        
+      if row["action"] == 'D':
+        ffdf = ffdf.filter(ffdf.id != row["id"])
+		
+    print(ffdf.count())	
+    ffdf.coalesce(1).persist(StorageLevel.MEMORY_AND_DISK).write.mode("overwrite").csv(finalFilePath2)
+
+    ffdf2 = spark.read.csv(finalFilePath2)
+    ffdf2.coalesce(1).persist(StorageLevel.MEMORY_AND_DISK).write.mode("overwrite").csv(finalFilePath)

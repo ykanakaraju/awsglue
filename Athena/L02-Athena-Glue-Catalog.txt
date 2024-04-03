@@ -1,0 +1,97 @@
+
+
+  Lab 2:  Create table using AWS Glue Data Catalog & Crawler
+  ----------------------------------------------------------
+
+  1. Open the AWS Glue Console 
+
+  2. From the left-side menu, click on 'Databases' link under 'Data Catalog' menu group.
+
+  3. Click on 'Add database' button and fill the details:
+
+	Name: retail_db_2
+	Click on 'Create database' button
+
+   4. Add a table to the data from an S3 
+	
+	4.1 Select the 'retail_db_2' database from the list and click on 'Add table' button.
+
+	     Table details
+		Name: categories
+		Database: retail_db_2
+	     Data store
+		Select the type of source: S3
+		Include path: s3://ykr-datasets/retail_db/categories/
+		  ** NOTE: Path MUST end with a '/' charactor
+	    Data format
+		Classification: CSV
+		Delimeter: Comma(,)
+	    Leave all others as defaults and click on 'Create table' button
+
+   5. Open Amazon Athena query editor and run queries on the created table.
+
+	5.1 Select the 'retail_db_2' database from the database option (on the left side dropdowns)
+	5.2 Run the following query in the query window:
+		select count(1) from categories;
+
+
+   Create table using AWS Glue Crawler
+   -----------------------------------
+	
+   6. Go to the AWS Glue Console and click on 'Crawlers' menu option (left menu) 
+
+   7. Click on 'Create crawler' button and fill the details	
+	
+	Crawler details: 
+	   	Name: retail_crawler
+	Data source configuration
+	  	Is your data already mapped to Glue tables?  Not yet
+		Data sources: Add data source
+			Data source: S3
+			Location of S3 data: In this account
+			S3 path:  s3://ykr-datasets/retail_db/customers/
+			   ** NOTE: Path MUST end with a '/' charactor
+			Subsequent crawler runs: Crawl all sub-folders
+			Click on 'Add an S3 data source' button
+		IAM role 
+			Existing IAM role: CTSGlueRole
+			  **Note: Select a Role with AWSGlueServiceRole & AmazonS3FullAccess policies attached
+			      	  You can have the Glue create a role for you if you don't have an exiting role.
+		Output configuration
+			Target database: retail_db_2  (created in step 2 above)
+		Crawler schedule
+			Frequency: On demand
+		Leave all others as defaults and Click on 'Create crawler' button
+
+   8. Go to 'Crawlers' page and wait until the state is 'Ready'
+
+   9. Run the crawler
+	9.1 Select the crawler and click on 'Run' button.
+	9.2 Wait until the crawler State become 'Ready' (it make a minute or so)
+	9.3 Now you should have the 'customers' table created in 'retail_db_2' database 
+
+   10. Open Amazon Athena query editor and run queries on the created table.
+
+	5.1 Select the 'retail_db_2' database from the database option (on the left side dropdowns)
+	5.2 Run the following queries in the query window:
+		select count(1) from customers;
+		select * from customers LIMIT 10;
+
+   11. Download results of the query as a CSV file
+	11.1 Click on 'Download result' button in the 'Results' pane.
+
+		
+			
+
+
+
+
+
+
+
+
+	
+
+ 
+		
+	

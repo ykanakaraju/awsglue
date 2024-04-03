@@ -1,0 +1,177 @@
+	
+  Reference URLs: 
+  --------------
+    URL1: https://catalog.us-east-1.prod.workshops.aws/workshops/976050cc-0606-4b23-b49f-ca7b8ac4b153/en-US
+	
+	
+ Step 1: Streaming Data Analytics Prelab setup
+ ==============================================  
+	
+  1.Setup the resources by creating and launching a CloudFormation template. 
+		
+	1.1  Signup to your AWS Account
+
+	1.2	Open the CloudFormation Console and click on 'Create stack' button
+	
+	1.3	Choose the following options:
+			Prepare template: Template is ready
+			Template source: Upload a template file
+			Click on 'Choose file' button
+			File to be uploaded: 1-Prelab-Kinesis-Real-Time-Clickstream.yaml  (provided to you)
+			Click on 'Next' button
+			
+	1.3 Specify stack details and complete the creation of CF stack.
+	
+			Stack name: kinesis-pre-lab
+			
+			Kinesis Pre Lab set up:
+				Username: admin
+				Password: Password123
+				Email: <Enter a valid email address>		
+				SMS: <Enter a valid phone number>
+				
+			Leave all other options as defaults, go till last page.
+
+			Check "I acknowledge that AWS CloudFormation might create IAM resources." checkbox
+				
+			Click on 'Create stack' button
+				
+	1.4 Wait until the stack status comes to "CREATE_COMPLETE". This may take about 3 minutes. 
+	
+	1.5 Check the email sent to your registered email and confirm your subscription to SNS topic.
+		This allows us to receive an email alert when an anamoly happens in the click stream
+		
+		
+  2. Setup the Kinesis data generator.
+ 
+	2.1 Open the CloudFormation stack and click on 'Outputs' tab
+	    Click on the KinesisDataGeneratorUrl link
+
+	2.2 Enter your username and password (created @1.3) to sign-in 	
+	
+	2.3 Enter the following details:
+	
+			Region: us-east-1
+			Stream/delivery stream: <this should be automatically filled up> 
+			Records per second: 1
+			
+			Record template:
+				
+				Template 1
+					Title: Schema Discovery Payload   
+					Content: {"browseraction":"DiscoveryKinesisTest", "site": "yourwebsiteurl.domain.com"}
+					Click on 'Test template' button 
+				Template 2
+					Click Payload
+					{"browseraction":"Click", "site": "yourwebsiteurl.domain.com"}
+				Template 3
+					Impression Payload
+					{"browseraction":"Impression", "site": "yourwebsiteurl.domain.com"}
+					
+	2.4 Keep this browser tab open. We are going to use it soon ..
+
+
+ Step 2: Real-Time Clickstream Anomaly Detection Kinesis Analytics
+ =================================================================
+ 
+ 3. Create a Kinesis data analytics application
+ 
+	3.1 Go to Kinesis management console in a new tab.
+		From the menu, select 'Analytics applications' -> 'SQL applications (legacy)'
+		Click on "Create SQL application (legacy)" button.
+	
+	3.2 Enter the following details:
+	
+			Application name: anomaly-detection-application 
+			Description: anomaly-detection-application
+			
+	3.3 Click on "Create legacy SQL application" button.
+	
+ 4. Configure kinesis data analytics application with an input stream.
+ 
+	4.1 On the application page, click Configure under Source tab
+	
+	4.2 Under Source configuration make the following selections:
+		a. For Source, choose Kinesis Firehose delivery stream.
+		b. For Delivery stream, choose the stream by clicking the Browse button.
+		c. For Record preprocessing with AWS Lambda, leave it as Off.
+		d. For IAM role for reading source stream, select Choose from IAM roles that Kinesis Analytics can assume.
+		   Under the Service role dropdown, choose the role kinesis-pre-lab-CSEKinesisAnalyticsRole-{xxxx}
+		   
+		***  DO NOT click on 'Discover Schema' yet
+		
+	4.3 Go back to the 'Kinesis data generator' tab
+		Make sure your region is 'us-east-1' and template is 'Schema discovary payload'
+		Click on 'Send data' button.
+		
+		Wait until you send 10 to 15 records.
+		
+	4.4 Go back to kinesis data analytics application tab
+		Click on 'Discover Schema' button
+		
+		This should validate the data
+		
+	4.5 Click 'Save changes' button. 
+		Your Kinesis Data Analytics Application is created with an input stream.
+		Now, you can add SQL queries to analyze the data that is being fed into the stream.		
+		
+ 5. Configure SQL code and analyze the data sent to the stream in real time 
+ 
+	5.1 In the 'Real-time analytics' tab, click 'Configure' to configure the SQL code.
+	5.2 Copy & paste the contents of 'Kinesis_Anlaytics_anomaly_detection.sql' file
+	5.3 Click Save and run application. 
+	
+		The analytics application starts and runs your SQL query.
+		This may take a couple of minutes to complete. 
+		
+	5.4 Once the application has started, you can find Output & Input sections below the SQL Editor. 
+		On the Input tab, observe the input stream data named SOURCE_SQL_STREAM_001.
+		
+ 6. Connect Lambda as a destination to the Data Analytics Pipeline
+ 
+	6.1 In the Output Streams section, select DESTINATION_SQL_STREAM and choose Connect to destination.
+	
+	6.2 For Destination configuration, choose the following.
+		a. For destination, choose AWS Lambda function.
+		b. Under Lambda Function, browse and choose CSEBeconAnomalyResponse & for version, choose $LATEST.
+		c. In Access permissions for writing the output stream, 
+			choose "Choose from IAM roles that Kinesis Data Analytics can assume" 
+			select the IAM role similar to kinesis-pre-lab-CSEKinesisAnalyticsRole-{xxxx} from the dropdown.
+			
+	6.3 In the In-application stream section, make the following selections:
+		a. Select 'Choose an existing in-application stream'.
+		b. For In-application stream name, choose DESTINATION_SQL_STREAM
+		c. For Output format, choose: JSON
+		d. click Save changes.
+		
+		This may take a few minutes. Please wait until its done. 
+		
+ 7. Start sending the streaming data from kinesis data generator (KDG) and let the analytics application detect the anamolies.
+ 
+	7.1 Open your KDG in five separate browser windows and sign in as the same user.
+	7.2 In one browser window, start sending the Impression payload at a rate of 1 record per second (keep this running).
+	7.3 On another browser window, start sending the Click payload at a rate of 1 record per second (keep this running).
+	7.4 On last three browser windows, start sending the Click payload at a rate of 20 records per second for a period of 30 seconds. 
+	
+		**If you did not receive an anomaly email, open another KDG window and send additional concurrent Click payloads. 
+		Make sure to not allow these functions to run for more than 10 to 20 seconds at a time. 
+		This could cause AWS Lambda to send you multiple emails due to the number of anomalies you are creating.
+		
+		
+	7.5 You can monitor anomalies on the Output tab if you choose Configure under Real-time analytics. 
+		Choose the DESTINATION_SQL_STREAM table. 
+		If an anomaly is detected, it displays in that table.
+		
+	7.6 If any anamolies are detected 
+	
+
+
+
+			
+				
+	
+				
+				
+			
+	
+		

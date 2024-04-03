@@ -1,0 +1,135 @@
+Getting Started with Managing Athena using Python boto3
+--------------------------------------------------------
+
+
+import boto3
+import os
+ 
+os.environ.setdefault('AWS_DEFAULT_REGION', 'us-east-1')
+ 
+athena_client = boto3.client('athena')
+ 
+athena_client.list_work_groups?
+ 
+athena_client.list_work_groups()
+
+# -------------------------------------------------
+# List databases
+# -------------------------------------------------
+databases = athena_client.list_databases(CatalogName='AwsDataCatalog')
+ 
+type(databases)
+type(databases['DatabaseList'])
+ 
+[database['Name'] for database in databases['DatabaseList']]
+
+# -------------------------------------------------
+# Get metadata for all tables in given database
+# -------------------------------------------------
+
+athena_client.list_table_metadata?
+ 
+athena_client.list_table_metadata(
+    CatalogName='AwsDataCatalog',
+    DatabaseName='retail_db'
+)
+ 
+tables = athena_client.list_table_metadata(
+    CatalogName='AwsDataCatalog',
+    DatabaseName='retail_db'
+)
+ 
+type(tables)
+ 
+tables['TableMetadataList']
+ 
+[table['Name'] for table in tables['TableMetadataList']]
+ 
+# -------------------------------------------------
+# Get metadata for a given table in given database
+# -------------------------------------------------
+
+athena_client.get_table_metadata?
+
+table_metadata = athena_client.get_table_metadata(
+    CatalogName='AwsDataCatalog',
+    DatabaseName='retail_db',
+    TableName='orders'
+)
+ 
+table_metadata
+ 
+table_metadata['TableMetadata']['TableType']
+ 
+table_metadata['TableMetadata']['Columns']
+ 
+table_metadata['TableMetadata']['Parameters']['location']
+
+# -------------------------------------------------
+# Processing metadata of all the tables returned by list_table_metadata
+# -------------------------------------------------
+
+tables = athena_client.list_table_metadata(
+    CatalogName='AwsDataCatalog',
+    DatabaseName='retail_db'
+)
+ 
+[table['Parameters']['location'] for table in tables['TableMetadataList']]
+
+
+# -------------------------------------------------
+# Run Athena Queries using Python boto3
+# -------------------------------------------------
+
+athena_client.start_query_execution?
+ 
+athena_client.list_work_groups()
+athena_client.get_work_group(WorkGroup='primary')
+ 
+query_execution = athena_client.start_query_execution(
+    QueryString='SELECT count(*) FROM myretail.orders'
+)
+ 
+query_execution
+ 
+athena_client.get_query_execution(
+    QueryExecutionId=query_execution['QueryExecutionId']
+)
+ 
+# s3 command to validate creation of the file using default output location
+aws s3 ls s3://itvathena/wgprimary/79e570cb-6d51-4408-84f4-bc81556ec9d0.csv
+
+
+# -------------------------------------------------
+# Review Athena Query Results using Python boto3
+# -------------------------------------------------
+
+athena_client.get_table_metadata(
+    CatalogName='AwsDataCatalog',
+    DatabaseName='myretail',
+    TableName='orders'
+)
+ 
+query_str = """
+    SELECT order_status, count(*) AS order_count
+    FROM myretail.orders
+    GROUP BY order_status
+"""
+ 
+query_execution = athena_client.start_query_execution(
+    QueryString=query_str
+)
+ 
+athena_client.get_query_execution(
+    QueryExecutionId=query_execution['QueryExecutionId']
+)
+ 
+query_results = athena_client.get_query_results(
+    QueryExecutionId=query_execution['QueryExecutionId']
+)
+ 
+query_results
+ 
+query_results['ResultSet']
+ 
+query_results['ResultSet']['Rows']
