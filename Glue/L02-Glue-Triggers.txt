@@ -1,0 +1,50 @@
+==================================================================
+ Lab 2: Creating and running a Glue trigger to invoke a Glue job
+==================================================================
+
+ *** NOTE: This is a continuation of Lab 1 ***
+
+ => A trigger is used to manage and schedule an ETL job execution
+
+ In this demo, we do the following:
+
+   -> Create a Trigger to invoke the Glue job
+   -> Start the trigger to run the job
+   -> Validate results using Athena
+
+   Source Data (Public S3 Bucket):  s3://crawler-public-us-east-1/flight/2016/csv
+
+
+
+ Add a Trigger to invoke and run the Glue Job
+ -----------------------------------------------
+
+ 1. Delete the 'parquet' folder in your S3 bucket 'cts-flights'
+
+ 2. Create a Trigger  (trigger schedules a Glue job to run on-demand or as per a schedule)
+
+	2.1 Open Glue console and Click on the 'Triggers' menu option under 'Data integration and ETL' section
+
+	2.2 Click on 'Add trigger' button
+		Name: flights_csv_to_parquet_trigger
+		Trigger type: On-demand
+		-> Next
+
+	2.3 Choose jobs or crawlers to activate
+		Click on 'Add a target resource' button
+		Select 'job' as resource type and select 'flights_csv_to_parquet' job
+		Job bookmark : disabled
+		-> Next -> Finish
+
+	2.4 Start the trigger	
+		Select the trigger and click on 'Start trigger' option from 'Actions' menu button
+		Wait for the trigger to complete running the job
+
+	2.5 Make sure the 'parquet' folder is recreated in the S3 bucket
+
+ 3. Validate the data in the 'parquet' S3 bucket using Athena
+	** Follow the steps from Lab-2 **
+	Query: select count(1) from flights_csv;
+
+
+

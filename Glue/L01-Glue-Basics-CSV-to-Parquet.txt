@@ -1,0 +1,234 @@
+
+==========================================================================
+ Part 1: Glue job to load data from S3 to S3 (CSV to parquet conversion)
+==========================================================================
+
+  In this demo, we do the following:
+
+  -> Create Crawler and Catalog table for flights data
+  -> Validate using Athena
+  -> Create Glue Job to convert file format from csv to parquet
+  -> Run and Monitor the job
+  -> Create Catalog table on top of new location with parquet file format
+  -> Validate new table using Athena
+    
+   Source Data (Public S3 Bucket):  s3://crawler-public-us-east-1/flight/2016/csv
+
+
+ Part 1: Create a Glue Database & a Crawler
+---------------------------------------------
+
+   1. Open the AWS Glue Console
+
+   2. Create a Database
+    	2.1 Click on 'Databases' menu option
+
+	2.2 Click on 'Add database' button 
+
+	2.3 Provide a name (flights-db) and click on 'Create database' button
+
+   3. Create a Crawler	
+	3.1 Click on 'Crawlers' menu option and click on 'Create Crawler' button
+
+	3.2 Crawler Details
+		Name: Provide a name (FlightsDataCrawlerCSV) 
+		-> 'Next'
+	3.3 Data source configuration
+		Is your data already mapped to Glue tables?  Not yet		
+	    	Data sources -> Add a data source
+			Data source: S3
+			Location of S3 data: In this account
+			S3 path: s3://crawler-public-us-east-1/flight/2016/csv/
+			     ** NOTE: This an AWS public dataset
+			Subsequent crawler runs: Crawl all sub-folders
+		Click on 'Add an S3 data source' button
+		-> Next
+
+	3.4 Configure security settings : Create an IAM role
+		IAM Role: AWSGlueServiceRole-Flight
+		-> Next
+
+	3.5 Set output and scheduling
+		Target database : flights-db
+		Table name prefix : flights_
+		Crawler schedule : On demand
+		-> Next
+
+	3.6 Review and create
+		-> Create crawler
+			
+   4. Run the Crawler
+	4.1 Select the crawler just created and click on 'Run' button
+
+	4.2 Observe the 'state' while the crawler is running. 
+	    Wait until the 'state' turns to 'Ready'
+	
+   5. Check the Data Calalog table being created in our database.
+	5.1 Click on Database menu option and click on our database (flights-db).
+
+	5.2 Click on "Tables" menu option.
+
+	5.3 You should see the table created with the name 'flights_csv'
+		Note: Here 'flights_' is the prefix and 'csv' is the bucket name.
+
+	5.4 Click on the table to view the details and the schema.
+	
+	
+  Part 2: Analyse the data using AWS Athena
+  -----------------------------------------
+
+   6. Open S3 Console and create a bucket to store Athena query results.
+	6.1 Bucket name: cts-flights-athena
+
+   7. Run queries on S3 bucket using AWS Athena Query Editor using Glue catalog tables.
+	7.1 Open the AWS Athena Console and click on 'Explore the query editor' button
+
+	7.2 Set up a bucket to store Athena Query results	
+		Go to 'Setting' tab and Click on 'Manage' button
+		Browse and select the bucket created in 1.1
+		Click 'Save' button.
+
+	7.3 Click on 'Editor' tab to open Query Editor and connect to the database.
+		Data source: AWSDataCatalog
+		Database: flights-db
+
+	7.4 Write your query in the editor, select the query text and click on 'Run' button
+		Query: 	select count(1) from flights_csv;
+			select * from flights_csv limit 5;
+				
+
+   Part 3: Create Glue Job to convert file format from 'csv' to 'parquet' in S3
+   ----------------------------------------------------------------------------
+
+   8. Create an S3 bucket to store the parquet files created by the job (from CSV files in S3). 
+	8.1 Bucket Name: cts-flights 
+            Folder: parquet
+	
+   9. Create a Policy for Glue to have full access on the above S3 bucket.
+	9.1 Open 'IAM Management Console' and click on 'Roles'
+
+	9.2 Click on 'Create Role' button
+		Trusted entity type: AWS service
+		Use case: Glue
+		-> Next
+
+	9.3 Click on 'Create Policy' button
+		Click on JSON tab and enter the JSON code
+		     *** Refer to the JSON  code towards the end of this doc ***
+		     ** Make sure you replace the bucket name with your bucket in the JSON script **
+		     -> Next -> Next
+		Review Policy
+		     Name: CTSFlightsS3Policy
+		Click on 'Create Policy' button
+		
+   10. Create a Role for Glue Job with the above policy	
+	10.1 Select 'Role' menu option and click on 'Create Role' button.
+		Trusted entity type: AWS service
+		-> Next
+
+	10.2 Add Permissions - add the following policies
+			CTSFlightsS3Policy
+			AWSGlueServiceRole
+		-> Next
+
+	10.3 Role details	
+		Role name: CTSFlightsGlueRole
+		Make sure you have the above polices (@10.2) mentioned in 'Permissions policy summary'
+
+	10.4 Click on 'Create role' button.
+		
+   11. Create a 'Glue Job' to convert csv to parquet	
+	11.1 Open Glue Console and select 'ETL Jobs' option
+
+	11.2 Jobs
+		Create job: Visual with a source and target
+		Source: Amazon S3
+		Target: Amazon S3
+		-> Create
+
+	11.3 Setup the Graph
+	     Click on the 'S3 bucket' (source) on the graph & set the following:
+		 S3 source type: Data Catalog table
+		 Database: flights-db
+		 Table: flights_csv
+
+	     Click on the 'S3 bucket' (target) on the graph & set the following:
+		 Format: Parquet
+		 S3 Target Location: s3://cts-flights/parquet/     
+
+	     Go to Job details tab
+		Name: flights_csv_to_parquet
+		IAM Role: CTSFlightsGlueRole
+		Type: Spark
+		Glue version: keep default (i.e Glue 3.0)
+		Language: Python 3
+		Worker type: keep default (i.e G 1X)
+		Requested number of workers: 2
+		Generate job insights: uncheck
+		Job bookmark: Disable
+		Job timeout (minutes): 30
+		
+	11.4 Click on 'Save'
+
+	11.5 Click on 'Run' button
+	
+   12. Check the output created in the output bucket
+	 Wait until the job is completed (might take a few minutes)
+	 Go to S3 console and check the bucket (@cts-flights/parquet) for parquet output. 
+	
+   13. Create a Crawler to crawl the 'parquet' S3 data and create a catalog table.
+	** follow the steps mentioned in Lab-1 **
+
+        Name: FlightsDataCrawlerParquet
+	Include path : s3://cts-flights/parquet/
+	
+	Choose an IAM role: 		
+		Existing IAM role: AWSGlueSeviceRole-Flights
+		Click on 'Update chosen IAM role' option
+		-> Next
+			
+	Set output and scheduling
+		Target database: flights_db
+		Table name prefix: flights_
+
+	Create and Run the crawler
+
+	Wait until the status changes from 'Starting' to 'Stopping'
+
+   14. Check the new Data catalog table created
+	Click on 'Tables' menu option (under 'Databases')
+	Check for 'flights_parquet' file being created.
+	
+   15. Validate the data in the 'parquet' S3 bucket using Athena
+	** Follow the steps from Lab-2 **
+	Query: select count(1) from flights_parquet;
+
+
+-----------------------------------------------------------------
+  Policy JSON for S3 access on a bucket
+  ** Make sure you replace the bucket name with your bucket **
+-----------------------------------------------------------------		
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ListObjectsInBucket",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::cts-flights"
+            ]
+        },
+        {
+            "Sid": "AllObjectActions",
+            "Effect": "Allow",
+            "Action": "s3:*Object",
+            "Resource": [
+                "arn:aws:s3:::cts-flights/*"
+            ]
+        }
+    ]
+}
+

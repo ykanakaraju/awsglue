@@ -1,0 +1,136 @@
+
+  ===============================================================================
+    Lab 6 - Load the data into Redshift table from an S3 bucket using AWS Glue.
+   ==============================================================================
+   
+	* Create an S3 Bucket and load the data to be transferred
+		(here we are using CSV files with header - users.csv, users2.csv, users3.csv)
+	* Create a Redshift cluster and create a table.
+	* Create a Glue classfier to read from CSV
+	* Create a Glue crawler to crawl S3 bucket and Run it.
+	* Create a Connection for Redshift
+	* Create a Redshift Crawler and Run it.
+	* Create a Glue Job and Run it
+	* Verify the Results in Redshift Query Editor.
+	
+
+	
+ 1. Create an S3 bucket and load the data files into it.	
+ -> Bucket: iquiz.demo1
+   (here we are using CSV files with header - users.csv, users2.csv, users3.csv)
+
+ 2. Create a Redshift cluster and create a table.	
+	2.1 Create a new Redshift cluster and wait until it comes 'Available' status
+		-> Cluster configuration
+		Cluster identifier: demo-cluster-1
+		What are you planning to use this cluster for?  Free trial
+		-> Database configurations
+		Admin user name: demoadmin
+		Admin user password: Demoadmin123
+		
+	**** Note down the "JDBC URL" which is needed later. ****
+	
+	2.2 Open the Query Editor v2 console
+	2.3 Create a Schema (name: demo1)
+		-> Option is available under "Create" dropdown in the Query Editor
+	2.4 Create a table under this schema. 
+		-> Execute the following query.
+		-> Your table name should be <schema>.<table-name>
+
+	create table demo1.users 
+	(id bigint, name varchar(50), gender varchar(10), age bigint, phone bigint)
+		
+ 3. Create a Glue classfier to read from CSV	
+	3.1 Open the AWS Glue Console and click on 'Classifier' menu option
+	3.2 Click on Add Classifier and fill the details:
+		-> Classifier name : csv-classifier
+		-> Classifier type and properties : CSV
+		-> 'Create'
+		
+ 4. Add a Glue database to be used with the crawlers.	
+	4.1 Click on 'Databases' menu option
+	4.2 Click on 'Add database' button 
+	4.3 Provide a name and click on 'Create'
+		-> Name: s3-redshift-db
+		
+ 5. Create a Crawler to crawl the S3 bucket created in step 1.
+	5.1 Click on 'Crawlers' menu option and click on 'Create Crawler' button
+	5.2 Crawler Details
+		-> Name: s3-crawler 
+		-> 'Next'
+	5.3 Data source configuration
+		-> Is your data already mapped to Glue tables?  Not yet		
+		-> Data sources -> Add a data source
+		-> Data source: S3
+		-> Location of S3 data: In this account
+		-> S3 path: s3://iquiz.demo1
+		-> Subsequent crawler runs: Crawl all sub-folders
+		-> Add an S3 data source
+		-> Next
+	5.4 Configure security settings : Create an IAM role
+		IAM Role: AWSGlueServiceRole-CSVRedshift
+		-> Next
+
+	5.5 Set output and scheduling
+		-> Target database : s3-redshift-db   (created in step 4)
+		-> Crawler schedule : On demand
+		-> Next
+
+	5.6 Review and create
+		-> Create crawler
+		
+ 6. Run the Crawler
+	6.1 Select the crawler just created and click on 'Run' button
+	6.2 Observe the 'state' while the crawler is running. 
+		==> Wait until the 'state' turns to 'Ready'	
+		
+ 7. Create a connection to connect to Redshift
+	7.1 Click the "Connections" menu option
+	7.2  Click on "Create connection" button and add the following details:
+		-> Name: redshift-connection
+		-> Connection type : Amazon Redshift
+		-> Database instances : demo-cluster-1 (created in step 2)
+		-> Database name: dev
+		-> Username: demoadmin
+		-> Password: Demoadmin123
+		
+ 8. Create another Crawler to crawl Redshift table.
+	=> Follow the same steps as mentioned in 5 & 6 with the following changes:
+		Name: redshift-crawler
+		Under Add data source
+			Data source: JDBC
+			Connection: redshift-connection  (Created in step 7)
+			Include path: dev/demo1/users  (<database>/<schema>/<table>)
+			IAM Role: AWSGlueServiceRole-CSVRedshift (same as previous step)
+			
+ 9. Create a Glue Job and run it	
+	9.1 Open Glue Console and select 'Jobs' option
+	9.2 Jobs
+		Create job: Visual with a source and target
+		Source: Amazon S3
+		Target: Amazon Redshift
+		-> Create
+	9.3 Setup the Graph
+		9.3.1 Click on the 'S3 bucket' (source) on the graph & set the following:
+			-> S3 source type: Data Catalog table
+			-> Database: s3-redshift-db
+			-> Table: iquiz_demo1
+		9.3.2 Click on the 'Redshift Cluster' (target) on the graph & set the following:
+			-> Database: s3-redshift-db
+			-> Table: dev_demo1_users
+		9.3.3 Click on the 'Apply mappings' (transform) on the graph and make sure the mapping are correct.
+			
+		9.3.4 Go to Job details tab
+			-> Name: s3-redshift-job
+			-> IAM Role: AWSGlueServiceRole-CSVRedshift
+			-> Type: Spark
+			-> Glue version: keep default (i.e Glue 3.0)
+			-> Language: Python 3
+			-> Worker type: keep default (i.e G 1X)
+			-> Requested number of workers: 2
+			-> Generate job insights: uncheck
+			-> Job bookmark: Disable
+			-> Job timeout (minutes): 30		
+	9.4 Click on 'Save'
+	9.5 Click on 'Run' button
+		

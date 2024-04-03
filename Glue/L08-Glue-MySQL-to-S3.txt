@@ -1,0 +1,221 @@
+
+ ==========================================================
+  Lab 7: Export data from RDS to S3 using AWS Glue
+ ==========================================================
+
+ 1. Create a VPC end-point for Amazon S3
+	
+	1.1 Go to VPC -> Endpoints and Create Endpoint
+	1.2 Search by Services: 
+		Service Name: com.amazonaws.us-east-1.s3; Type: Gateway
+	1.3 Select your VPC and tick a Route Table ID
+	1.4 Choose Full Access 
+	1.5 Create Endpoint
+	
+	Note: Creating a VPC end-point for S3 allows the services running in your VPC, such as Glue, to 
+	communicate over a private network bypassing the internet. 
+	
+ 2. Create an IAM role for Glue and attach AWSGlueServiceRole
+ 
+	2.1 Go to IAM -> Roles -> Create role
+	2.2 AWS Service: Glue
+	2.3 Name: AWSGlueServiceRole-RDStoS3
+		Policies: AdministratorAccess, AWSGlueServiceRole
+	2.4 Create Role
+
+ 3. Setup an RDS Database
+
+	3.1	Open the RDS service and click on 'Create Database' button
+	
+	3.2 Create a Database with the following options:
+	
+		Choose a database creation method : Standard create
+		Engine options: MySQL  (this is our source endpoint)
+		Edition: MySQL Community
+		Version: MySQL 8.0.23
+		Templates: Free-tier
+		DB Instance Identifier: mysql-db
+		Credential Settings:
+			Master username : admin
+			Master password : Password123
+		DB instance class
+			Burstable classes : db.t2.micro
+		Storage: leave the defaults
+		Storage autoscaling: Uncheck the option for autoscaling
+		Connectivity		
+			Public access: Yes				
+			VPC security group : Choose existing (i.e default SG)
+			Availability Zone:  No Preference
+		Database Authentication: Password authentication
+		Additional Configuration
+			Database Options
+				Initial database name: leave blank
+				DB parameter groups: <Select the one we created in step 2>
+				-> This is required for MySQL to connect to DMS
+		Maintenence
+			'Enable auto minor version upgrade': uncheck
+	    
+		Click on 'Create database' button.
+
+
+ 4. Connect to RDS and dump data
+
+	4.1 Open the RDS service from the console.
+		 Open the database instance created in step 3		
+		 Copy the endpoint (you need it to connect via MySQL workbench)	
+
+	4.2 Connect to the database instance from MySQL workbench
+		
+		Open the MySQL workbench
+		Click on the + button @ the right side of 'MySQL Connections'
+		This opens "Setup New Connections" dialog.
+		Create a New Connection:
+			Connection Name: Give some name (ex: cdc-pyspark)
+			Hostname: give the database endpoint here..
+			Username: Master username of the database (ex: admin)
+			Password: Master password (ex: Password123)
+			Click on "Test Connection" button (make sure its success)
+
+			NOTE:
+			-----
+			If your test is failing to connect, ensure that your security group
+			associated with the database, allows traffic from your local machine.
+
+			Go to RDS service and click on the RDS database 
+			In the "Connectivity & security" tab, click on the VPC security group (ex: default(sg-xxxx) )
+			Open the security group.
+			Click on "Edit Inbound rules" option under "Inbound rules" tab
+			Add a rule to allow "All traffic" from "any ip address" (i.e 0.0.0.0/0)
+			-> You may also add your IP only if you want to be more secure. 
+
+	4.3 Load some data into the database - Create a schema, table and insert some sample data
+	
+		Open the connection you created in the previous step
+		Copy the content from "DDL_LoadData_Script.sql" file and execute them in the MySQL Workbench.
+			schema: cdcdb
+			table: Persons
+		This loads data into the database.
+		
+
+ 5. Add a Connection to connect to MySQL database and test it.
+ 
+	5.1 Go to AWS Glue -> Data Catalog -> Connections 
+	5.2 Click 'Connections' -> 'Create Connection'
+	5.3 Select 'JDBC' -> Next
+	5.4 Setup your connection as follows:
+		JDBC URL: jdbc:mysql://<rds-end-point>:3306/<database>
+		Credential type: Username and password
+			-> Provide username and password  (admin / Password123)
+		Network options
+			VPC : <default VPC>
+			Subnet: <select the first one from the list>
+			Security groups: <default security group>
+		-> Next
+		Name:  MySQL Jdbc Connection
+	5.5 Click on 'Create Connection' button
+	5.6 Select the connection and from 'Actions' menu select 'Test connection'
+		IAM role: AWSGlueServiceRole-RDStoS3	
+		
+		
+ 6. Create an S3 bucket
+ 
+    6.1 Create an S3 bucket in 'us-east-1' region
+		Name: cts-glue-rds-mysql
+		Region: 'us-east-1'  (same region as the other resources)
+	
+ 
+ 7. Add a Connection to access Amazon S3 
+ 
+    7.1 Create an S3 bucket in 'us-east-1' region (same region as the other resources)
+		Name: cts-glue-rds-mysql
+	7.2 Go to AWS Glue -> Data Catalog -> Connections 
+	7.3 Click 'Connections' -> 'Create Connection'
+	7.4 Select 'Network' -> Next
+	7.5 Setup your connection as follows:
+		VPC: <Select the same one as the RDS>
+		Subnet: <Select the same one as the RDS>
+		Security Group: default*
+		-> Next
+		Name: Network connection
+	7.6 Click on 'Create Connection' button
+	
+
+ 8. Create Glue databases to connect to both these sources (i.e RDS and S3 bucket)
+	
+	8.1 Go to AWS Glue -> Databases -> Add database
+	8.2 Add two databases: mysql_input and s3_output
+	
+		
+ 9. Add Crawler to crawl MySQL data
+ 
+	9.1 Create a crawler as follows:
+		Name: rds_mysql_crawler
+		Data sources : click 'Add a data source' button
+			Data source: JDBC
+			Connection: MySQL Jdbc Connection
+			Include path: cdcdb/Persons
+			Click on 'Add a JDBC data source' button
+		IAM Role: Existing IAM role -> AWSGlueServiceRole-RDStoS3
+		Target database : mysql_input
+		Crawler schedule: On demand
+	9.2 Create Crawler
+	9.3 Select and run the crawler
+
+	
+ 10. Create a Glue job	
+	
+	10.1 'Data Integration and ETL' -> 'ETL jobs' -> 'Visual ETL' button
+	10.2 From 'Source' select 'MySQL' node
+		Set the following properties:
+			Name: MySQL	
+			JDBC source: Data Catalog table
+			Database: rds_mysql_input
+			Table: cdcdb_persons
+	10.2 From 'Target' select 'Amazon S3' node
+		Set the following properties:	
+			Name: Amazon S3
+			Node parents: MySQL (this may be already selected)
+			Format: Parquet
+			S3 Target Location: <browse and select s3 bucket i.e cts-glue-rds-mysql>
+	10.3 Go to 'Job details' tab and set the following
+		Name: RDS to S3 job
+		IAM Role: AWSGlueServiceRole-RDStoS3
+		Job timeout (minutes): 30
+		Connections: Network Connection
+		Leave other options as defaults
+	10.4 Click on 'Save' button.
+	10.5 Click on 'Run' button to run the job
+	
+		Wait until the job is completed.
+		
+
+ 11. Check the parquet files being generated in the S3 bucket
+ 
+ 
+ 12. Create a Glue crawler to create a table to query S3 data
+ 
+	12.1 Create a crawler as follows:
+		Name: s3_crawler
+		Data sources : click 'Add a data source' button
+			Data source: S3
+			Network Connection: Network connection
+			S3 path: <browse and select s3 bucket i.e cts-glue-rds-mysql>
+		IAM Role: Existing IAM role -> AWSGlueServiceRole-RDStoS3
+		Target database : s3_output
+		Crawler schedule: On demand
+	12.2 Create Crawler
+	12.3 Select and run the crawler
+	
+ 13. Validate the S3 data using Athena. 
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

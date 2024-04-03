@@ -1,0 +1,89 @@
+* Here we are using a user profile named "ctsuser123"
+* We need to make sure that the user has required permissions to manage Glue Catalog via CLI.
+* We can assign 'AWSGlueServiceRole' policy to the user whose credentials are configured for AWS CLI Profile.
+
+
+Crawler Commands
+
+	aws glue list-crawlers --profile ctsuser123
+
+	aws glue get-crawler --name "Retail Crawler" --profile ctsuser123
+
+	aws glue start-crawler --name "Retail Crawler" --profile ctsuser123
+
+	aws glue get-databases --profile ctsuser123
+
+	aws glue get-tables --database-name retail_db --profile ctsuser123
+
+	aws glue get-table \
+    	--database-name retail_db \
+    	--name orders \
+    	--profile ctsuser123 \
+	--region us-east-1
+
+	aws glue get-partitions \
+    	--database-name retail_db \
+    	--table-name ghactivity \
+    	--profile ctsuser123 \
+    	--region us-east-1
+
+
+
+
+Listing jobs
+
+    	aws glue list-jobs \
+        --profile ctsuser123 \
+        --region us-east-1
+
+
+Get job details
+
+    	aws glue \
+        get-job \
+        --job-name github_json_to_parquet \
+        --profile ctsuser123 \
+        --region us-east-1
+
+
+Get job run ids. 
+The latest one will be typically at top.
+
+	aws glue \
+    	get-job-runs \
+        --job-name github_json_to_parquet \
+        --profile ctsuser123 \
+        --region us-east-1
+
+
+Get job run details to verify if job is successful or not.
+
+	aws glue \
+    	get-job-run \
+        --job-name github_json_to_parquet \
+        --run-id jr_a350197ce2d5cc3168160813e28bef293e0edd4fc2fe8f458191885d0bb32f96 \
+        --profile ctsuser123 \
+        --region us-east-1
+
+
+Get job bookmark details. 
+This information will be used to read the data in incremental fashion in subsequent runs. 
+Make sure to keep track of it to compare with subsequent runs.
+
+	aws glue \
+    	get-job-bookmark \
+        --job-name github_json_to_parquet \
+        --profile ctsuser123 \
+        --region us-east-1
+
+
+We can use reset-job-bookmark to reset remove the bookmark. 
+It comes handy to start the jobs from the beginning. 
+We can also reset to a particular run using run id.
+
+	aws glue reset-job-bookmark \
+    	--job-name github_json_to_parquet \
+    	--profile ctsuser123 \
+    	--region us-east-1
+
+

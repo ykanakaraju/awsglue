@@ -1,0 +1,131 @@
+===============================================================
+ Lab 3: Create a 'Workflow' to automate execution of triggers
+===============================================================
+
+ *** NOTE: This is a continuation of Lab 2 ***
+
+ In this demo, we do the following:
+
+   -> Create a Glue Workflow and define the workflow pipeline
+   -> Run the workflow
+   -> Monitor the workflow for the status
+   -> Validate results using Athena
+
+   Source Data (Public S3 Bucket):  s3://crawler-public-us-east-1/flight/2016/csv
+
+
+ Create a 'Workflow' to automate all the above steps
+ ----------------------------------------------------
+ Workflow is an archestrated pipeline that runs triggers. 
+ Each trigger may invoke a crawler or run a job.
+
+ 1. Select 'Workflow' menu option from the AWS Glue console.
+
+ 2. Click on 'Add workflow' button
+		Workflow name: Flights CSV to Parquet Workflow
+		-> Add Workflow
+	
+ 3. Define the workflow pipeline
+	3.1 Select the workflow and click on 'Add trigger' button
+	
+	3.2 Add a new Trigger to Crawl the CSV data
+		3.2.1 Click on 'Add new' tab
+		      Name: Run glue crawler for flights CSV trigger
+			  -> Add
+		
+	    3.2.2 Select the trigger from the graph and select 'Edit' option from 'Actions' dropdown
+		      Trigger type: 'On demand'
+		      -> Save
+		
+	3.3 Add a Crawler to this trigger	
+		3.3.1 Select the trigger from the graph 
+		3.3.2 Select 'Add jobs/crawlers to the trigger' option from 'Actions' dropdown
+		3.3.3 Open 'Crawlers' tab
+		3.3.4 Select 'FlightsDataCrawlerCSV'
+		-> Add
+	
+	3.4 Add another trigger to the crawler we just added (to run the job)
+		3.4.1 Select the crawler from the graph and click on 'Add trigger' option (on the graph)
+		
+		3.4.2 Select 'Add new' tab
+			Name: Run flights_csv_to_parquet Job
+			Trigger type: event
+			Trigger logic: Start after ALL watched event
+			-> Add
+			
+	3.5 Add a Job to the trigger
+		3.5.1 Select the trigger (created in 3.4) from the graph	
+		3.5.2 Select 'Add jobs/crawlers to the trigger' option from 'Actions' dropdown
+		3.5.3 Open 'Jobs' tab
+		3.5.4 Select 'flights_csv_to_parquet'
+		-> Add
+		
+	3.6 Add another trigger to the job we just added (to run another crawler on parquet data)
+		3.6.1 Select the job from the graph and click on 'Add trigger' option (on the graph)
+		
+		3.6.2 Select 'Add new' tab
+			Name: Run glue crawler for flights PARQUET trigger
+			Trigger type: event
+			Trigger logic: Start after ALL watched event
+			-> Add
+			
+	3.7 Add a Crawler to this trigger	
+		3.7.1 Select the trigger from the graph 
+		3.7.2 Select 'Add jobs/crawlers to the trigger' option from 'Actions' dropdown
+		3.7.3 Open 'Crawlers' tab
+		3.7.4 Select 'Flights Data Crawler Parquet'
+		-> Add
+		
+ 4.  Cleanup the data before running the workflow.
+	4.1 Delete both the tables (flights_csv & flights_parquet) from the database
+	4.2 Delete the 'parquet' folder in your S3 bucket 'cts-flights'
+		
+ 5. Run the workflow
+	5.1 Select the workflow you just created from the Glue console
+	5.2 Select the very first trigger (on-demand trigger) (if it is not already selected) from the pipeline graph
+	5.3 Click on 'Run workflow' button
+	    => This step starts the workflow.
+			
+ 6. Monitor the workflow for the status
+	6.1 Select the workflow (in the running state)
+	6.2 Click on 'History' tab
+	6.3 Select the 'Run Id' of the workflow and click on 'View run details' button
+	Here you can monitor the status of each trigger in the workflow. 
+	This might take several minutes to process all the triggers. 
+	
+ 7. Check the status after the workflow is completed
+	7.1 Check for the two tables being created in the database (created by crawlers)
+	7.2 Check the 'parquet' folder being created in S3 bucket (created by the job)
+	
+ 8. Validate the data by running queries using Athena
+	** Follow the steps from Lab-2 **
+	
+	
+-----------------------------------------------------------------
+Policy JSON for S3 accees on a bucket
+** Make sure you replace the bucket name with your bucket **
+-----------------------------------------------------------------		
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Sid": "ListObjectsInBucket",
+            "Effect": "Allow",
+            "Action": [
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::cts-flights"
+            ]
+        },
+        {
+            "Sid": "AllObjectActions",
+            "Effect": "Allow",
+            "Action": "s3:*Object",
+            "Resource": [
+                "arn:aws:s3:::cts-flights/*"
+            ]
+        }
+    ]
+}
+

@@ -1,0 +1,66 @@
+ ========================================================
+   Lab 5: ETL PySpark job with Joins
+ ========================================================
+
+   1. Load the required data to S3
+	1.1 Create the following S3 directory structure  (with your own bucket names, ofcourse)
+		s3://iquiz.glue/movie_ratings/movies/             
+		s3://iquiz.glue/movie_ratings/ratings/
+		s3://iquiz.glue/movie_ratings/joined_output/
+
+	1.2 Load the following datasets to the corresponding buckets:
+		movies.csv to s3://iquiz.glue/movie_ratings/movies/
+		ratings.csv to s3://iquiz.glue/movie_ratings/ratings/
+
+   2. Create an IAM Role (CTSGlueRole) for Glue with the following policies:			
+	Service: Glue
+	Policies:   
+	  -> AmazonS3FullAccess
+	  -> AWSGlueServiceRole
+
+   3. Create a database with the name 'glue_joins'
+
+   4. Create two different crawlers to crawl the 'movies' and 'ratings' S3 buckets
+      and run them. Use 'glue_joins' as database. (do not give any table prefixes)
+
+	  -> After this step you should have 'movies' and ratings' tables created in Glue catalog
+
+   5. Validate the data of 'movies' and 'ratings' using Athena. 
+	
+
+   6. Create the Glue job
+
+	Create job
+		Type: Spark script editor
+		Options: 
+			Upload and edit an existing script
+			-> Browse and select the provide script file (moviesratings-join.py)
+
+			** NOTE: make sure the following lines are modified **
+			------------------------------------------------------
+			glue_db = "glue_joins"
+			glue_movies = "movies"
+			glue_ratings = "ratings"
+
+			s3_write_path = "s3://iquiz.glue/movie_ratings/joined_output/"
+			----------------------------------------------------------------------
+
+		Click on 'Create' button
+
+	Click on 'Job details' tab
+		Name: PySpark Joins Demo
+		IAM Role: CTSGlueRole
+		Requested number of workers: 2
+		Generate job insights: uncheck
+		Job timeout (minutes): 30
+	Click on 'Save' button
+
+   7. Run the job
+	Wait until job is completed. 
+
+   8. Check the results
+	    Once the the job is complete the results of the script are stored in output s3 folder
+	    -> Output s3 folder: s3://iquiz.glue/movie_ratings/joined_output/
+
+
+
