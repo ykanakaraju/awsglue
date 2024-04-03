@@ -1,0 +1,37 @@
+const AWS = require('aws-sdk');
+const SES = new AWS.SES();
+const fs = require('fs');
+
+exports.handler = async (event) => {
+    const { to, subject } = JSON.parse(event.body);
+    const body = "<html><body>TEST </body></html>";
+
+    const params = {
+        Destination: {
+            ToAddresses: [to],
+        },
+        Message: {
+            Body: {
+                Html: { Data: body }
+            },
+            Subject: {
+                Data: subject
+            },
+        },
+        Source: 'kanakaraju@gmail.com'
+    };
+
+    try {
+        await SES.sendEmail(params).promise();
+        return {
+            statusCode: 200,
+            body: 'Email sent!'
+        };
+    } catch (e) {
+        console.error(e);
+        return {
+            statusCode: 400,
+            body: 'Sending failed'
+        };
+    }
+};

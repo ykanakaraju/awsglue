@@ -1,0 +1,75 @@
+  
+  Lab 2: Firing a Lambda function in response to an SNS event
+  -----------------------------------------------------------
+
+	*** Script: cts-lambda-sns-cloudwatch.py ***
+
+	1. Create a new IAM Role (or use a previously created role) as follows:
+		
+		Name: CTSLambdaDemoRole
+		Service: lambda
+		Policies: CloudWatchFullAccess
+
+	2. Open Amazon SNS management console and create a new SNS topic with the following details:
+		
+		* Click on 'Create topic' button
+		* Type: Standard
+		* Name: CTSDemoTopic
+		* Click on 'Create Topic' button  (leave all other options as such)
+
+	3. Open a separate AWS Lambda console window and click on 'Create new function' button
+
+	4. Enter following details:
+		
+		* Author from scratch
+		* Function name: cts-lambda-sns-cloudwatch
+		* Runtime: Python 3.9
+		* Architecture: x86_64
+		* Permissions: Click on 'Change default execution role' link
+			Select 'Use an existing role' option 
+			Select role created in step 1
+		* Advanced settings : leave defaults
+
+	5. Click on 'Create function' button after enter all the above details
+
+	6. In the function details page, click on the 'Code' tab 
+
+	7. Put the code from the "cts-lambda-sns-cloudwatch.py" script and click on 'Deploy' button.
+
+	7. Configure a test event to test the code using the following details:
+		
+		* Click on the "Test" tab
+		* Event name: cts-lambda-sns-cw-test
+		* Template : SNS Topic Notification
+		* Leave everything as defaults and click on 'Save' button
+
+	8. Click again on the 'Code' tab and test the function.
+		
+		8.1 Click on 'Test' button. 
+		
+		This will run the function and shows the execution results in a separate tab. 
+
+	9. Open the CloudWatch console in a separate window tab and check for the log messages. 
+
+	10. Lets add SNS as a trigger for the lambda function. Do the following:
+		
+		* Click on 'Add trigger' button in the 'Function overview' section. 
+		* Source: select 'SNS' as the source from the dropdown
+		* SNS topic: Select the topic you created earlier (CTSDemoTopic)
+		* Click on 'Add' button
+
+	11. Open the SNS console window and 'Publish a message' as below:
+		
+		* Click on 'Publish message' button
+		* Subject: Type some subject text (ex: 'this is a test subject from SNS')
+		* Message body to send to the endpoint:  Type some message text (ex: 'this is a test message from SNS')
+		* Click on 'Publish Message' button.
+
+	12. Open the CloudWatch console in a separate window tab and check for the log messages. 
+
+
+
+
+
+
+

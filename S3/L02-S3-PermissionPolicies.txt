@@ -1,0 +1,128 @@
+  
+  Lab 2: S3 Use Policies and Bucket Policies
+  ------------------------------------------
+
+	=============================================
+	Reference Script File:  S3-Policy-Scripts.txt
+	=============================================
+
+
+	1. Login to AWS management console as ctsdemouser
+	   This is a user created in Administrator group.
+
+	2. Create a new IAM user with access to the AWS Management Console
+		User name: ctsdemouser2
+		Provide user access to the AWS Management Console: Yes
+		Are you providing console access to a person?
+		  => Choose the option: I want to create an IAM user
+		Console password: Provide a custom password. 
+		Uncheck : Users must create a new password at next sign-in (recommended).
+
+		** This user has no other permissions.
+
+	3. Login to AWS management console in a separate private (incognito) browser window 
+           with the user credentials of the above user (i.e ctsdemouser2)
+
+        4. Open the S3 console. This user should not any content in S3 as this user has no permissions on S3
+
+ 
+ 
+     	Apply a user policy to list S3 buckets to ctsdemouser2 user
+     	-----------------------------------------------------------
+
+	5. In your main window (logged in as ctsdemouser), open IAM console and select
+           ctsdemouser2 user account
+
+        6. Add inline user policy to this user to list all S3 buckets in the account.
+
+		6.1 In the Permissions policies, click 'Add permissions' and select 'Add inline policy' option
+		6.2 Click on the JSON tab and paste the following JSON snippet.
+
+			json script:   1. List buckets (user policy)
+			file:          S3-Policy-Scripts.txt
+
+	7. Now go to the private window (of ctsdemouser2 user account). 
+		* Open the S3 console
+		* You can now see all S3 buckets
+		* Try to open a directory or download a file. Access is denied for these operations.
+
+
+   	Update user policy to list S3 buckets and open a specific bucket objects to ctsdemouser2 user
+    	---------------------------------------------------------------------------------------------
+
+	8. From the main window, edit the inline user policy of ctsdemouser2 user to list all S3 buckets in the account.
+
+		6.1 In the Permissions policies, click 'Add permissions' and select 'Add inline policy' option
+		6.2 Click on the JSON tab and paste the following JSON snippet.
+
+			json script:   2. List buckets and open bucket objects of a bucket (user policy)
+			file:          S3-Policy-Scripts.txt
+
+			NOTE: Make sure the ARN of S3 bucket should match your bucket ARN.
+
+	9. Now go to the private window (of ctsdemouser2 user account). 
+		* Open the S3 console
+		* You can now see all S3 buckets
+		* You can open and list objects of the bucket for which you have given ListBucket access.
+		* Try to download or upload a file. Access is denied for these operations.
+
+ 
+	Update user policy to allow upload and download to a specific bucket
+    	--------------------------------------------------------------------
+
+	10. From the main window, edit the inline user policy of ctsdemouser2 user to list all S3 buckets in the account.
+
+		6.1 In the Permissions policies, click 'Add permissions' and select 'Add inline policy' option
+		6.2 Click on the JSON tab and paste the following JSON snippet.
+
+			json script:   3. Upload object and download objects to a bucket (user policy)
+			file:          S3-Policy-Scripts.txt
+
+			NOTE: Make sure the ARN of S3 bucket should match your bucket ARN.
+
+	11. Now go to the private window (of ctsdemouser2 user account). 
+		* Open the S3 console
+		* You can now see all S3 buckets
+		* You can open and list objects of the bucket for which you have given ListBucket access.
+		* Try to download or upload a file. Access is denied for these operations. 
+		
+
+	Create a bucket policy to allow access to ctsdemouser2 on a specific bucket
+    	----------------------------------------------------------------------------
+	
+	12. From the main window, Open S3 console and open 'ctsdemo-input-data' bucket
+	    (or any existing bucket for which the ctsdemouser2 has no access)
+
+	13. Go to 'Permissons' tab and in 'Bucket policy' section click on 'Edit'
+
+	14. Paste the following JSON snippet.
+
+		json script:   4. Bucket policy to access departments/* in ctsdemo042023 bucket for ctsdemouser2 user
+		file:          S3-Policy-Scripts.txt
+
+		NOTE: Make sure the ARN of S3 bucket and IAM user match your bucket and user ARN.
+
+	15. Now go to the private window (of ctsdemouser2 user account). 
+		* Open the S3 console
+		* You can now see all S3 buckets
+		* You can open the allowed directory in the bucket as per the bucket policy. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+

@@ -1,0 +1,99 @@
+-------------------------------------------
+ 1. List buckets (user policy)
+-------------------------------------------
+{
+	"Version": "2012-10-17", 
+	"Statement":[
+		{
+			"Sid": "ListAllBuckets",
+			"Action": ["s3:ListAllMyBuckets"], 
+			"Effect": "Allow", 
+			"Resource": ["arn:aws:s3:::*"]
+		}
+	]
+}
+
+---------------------------------------------------------------------
+ 2. List buckets and open bucket objects of a bucket (user policy)
+---------------------------------------------------------------------
+
+{
+	"Version": "2012-10-17", 
+	"Statement": [
+		{
+			"Sid": "ListAllBuckets", 
+			"Action": [ "s3:ListAllMyBuckets" ], 
+			"Effect": "Allow", 
+			"Resource": [ "arn:aws:s3:::*" ]
+		},
+		{
+			"Sid": "AllowRootLevelListing", 
+			"Action": ["s3:ListBucket"], 
+			"Effect": "Allow", 
+			"Resource": ["arn:aws:s3:::ctsdemo042023"], 
+			"Condition":{ 
+				"StringEquals":{
+					"s3:prefix":[""], "s3:delimiter":["/"]
+				}
+			}
+		}
+	]
+}
+
+---------------------------------------------------------------------
+ 3. Upload object and download objects to a bucket (user policy)
+---------------------------------------------------------------------
+
+{
+	"Version": "2012-10-17", 
+	"Statement": [
+		{
+			"Sid": "ListAllBuckets", 
+			"Action": [ "s3:ListAllMyBuckets" ], 
+			"Effect": "Allow", 
+			"Resource": [ "arn:aws:s3:::*" ]
+		},
+		{
+			"Sid": "AllowRootLevelListing", 
+			"Action": ["s3:ListBucket"], 
+			"Effect": "Allow", 
+			"Resource": ["arn:aws:s3:::ctsdemo042023"], 
+			"Condition":{ 
+				"StringEquals":{
+					"s3:prefix":[""], "s3:delimiter":["/"]
+				}
+			}
+		},
+		{
+			"Sid":"AllowUserToReadWriteObjectDataInDepartmentFolder", 
+			"Action":["s3:GetObject", "s3:PutObject"], 
+			"Effect":"Allow", 
+			"Resource":["arn:aws:s3:::ctsdemo042023/*"]
+		}
+	]
+}
+
+---------------------------------------------------------------------------------------
+ 4. Bucket policy to access departments/* in ctsdemo042023 bucket for ctsdemouser2 user
+---------------------------------------------------------------------------------------
+
+{
+	"Version": "2012-10-17", 
+	"Id": "Policy1561964929358", 
+	"Statement":[
+	{
+		"Sid": "Stmt1561964454052", 
+		"Effect": "Allow", 
+		"Principal": {
+			"AWS": "arn:aws:iam::157549686651:user/ctsdemouser2"
+		},
+		"Action": "s3:*", 
+		"Resource": "arn:aws:s3:::ctsdemo042023",
+		"Condition": {
+			"StringLike": {
+				"s3:prefix": "departments/*"
+			}
+		}
+	}
+	]
+}

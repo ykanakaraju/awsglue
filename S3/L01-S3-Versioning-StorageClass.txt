@@ -1,0 +1,49 @@
+  
+  Lab 1: S3 with versioning, storage class, life cycle rules
+  ----------------------------------------------------------
+
+	1. Create an S3 bucket from AWS MC (name: ctsdemo)
+
+	2. Enable version control on the buckets
+	
+		2.1 Select the bucket
+		2.2 Properties -> Bucket Versioning -> Edit -> Enable
+		
+	3. Upload some objects to the bucket with a custom storage class
+
+		3.1 Objects -> Upload -> [ Drag and drop directories & files ]
+		3.2 Expand 'Properties' tab -> Select desired storage class
+		3.3 Click 'Upload' button to upload.	
+		
+		Sample S3 URL: https://ctsdemo.s3.amazonaws.com/categories/part-00000
+		Sample S3 URI: s3://ctsdemo/categories/part-00000
+	
+	4. Validate versioning on S3 buckets
+
+		4.1 Check 'Show versions' toggle button. (just beside the search textbox)
+		4.2 Upload a copy of the existing file one more time. 
+			-> You should now see two versions of the object.
+		4.3 Delete the latest version of the object from the bucket	
+			-> You should still see the old versions of the object in the S3 bucket.
+			
+	5. Create Life cycle rules on the S3 bucket to delete previous versions older than 2 days.
+
+		NOTE: To add 'Life cycle rules' on a bucket we should have 'Versioning' enabled.
+		
+		5.1 S3 bucket ->  Management -> Create Lifecycle Rule.
+
+		5.2 Enter the details:
+			  Name: Archive old files
+			  Choose a rule scope: Limit the scope of this rule using one or more filters
+			  Filter type 
+				  Prefix: categories  (this is the directory within the bucket on which we apply rule) 
+			  Lifecycle rule actions: Check 'Permanently delete noncurrent versions of objects'
+			  Days after objects become noncurrent: 2
+			  
+		5.3 Click 'Create rule' button to create the rule.
+
+	
+
+
+
+

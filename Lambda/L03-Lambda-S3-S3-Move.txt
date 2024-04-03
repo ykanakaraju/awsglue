@@ -1,0 +1,58 @@
+  
+  Lab 3: Lambda function to move files from one S3 bucket to another
+  ------------------------------------------------------------------
+
+	*** Script: cts-lambda-s3-s3-move.py ***
+
+	1. Create a new IAM Role (or update an existing role) as follows:
+		
+		Name: CTSLambdaDemoRole
+		Service: lambda
+		Policies: CloudWatchFullAccess, AmazonS3FullAccess				
+
+	2. Open Amazon S3 management console and create two buckets as source and target bucket:
+		
+		* ctsdemo-input-data   (used as source bucket)
+		* ctsdemo-output-data   (used as target bucket)
+
+	3. Open a separate AWS Lambda console window and click on 'Create new function' button
+
+	4. Enter following details:
+		
+		* Author from scratch
+		* Function name: cts-lambda-s3-s3-move
+		* Runtime: Python 3.9
+		* Architecture: x86_64
+		* Permissions: Click on 'Change default execution role' link
+			Select 'Use an existing role' option 
+			Select role created in step 1
+		* Advanced settings : leave defaults
+
+	5. Click on 'Create function' button after enter all the above details
+
+	6. In the function details page, click on the 'Code' tab 
+
+	7. Put the code from the "cts-lambda-s3-s3-move.py" script and click on 'Deploy' button.
+	   NOTE: make sure you put correct 'target_bucket' in the python code.
+
+	8. Lets add source S3 bucket as a trigger for the lambda function. Do the following:
+		
+		* Click on 'Add trigger' button in the 'Function overview' section. 
+		* Select a source: select 'S3' as the source from the dropdown
+		* Bucket: Select your source bucket (i.e s3/ctsdemo-input-data in this case)
+		* Event type: All object creation events
+		* Recursive invocation: Check
+		* Click on 'Add' button
+
+	9. Now, upload some files to the source bucket.
+	
+		* Every file will invoke a separate Lambda function execution.
+		* The function moves the file to the destination bucket and deletes the files from the source bucket.
+
+	
+
+
+
+
+
+

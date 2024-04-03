@@ -1,0 +1,112 @@
+  
+  Lab 2: S3 Use Policies and Bucket Policies
+  ------------------------------------------
+
+
+   Some importent s3 commands
+   ---------------------------
+
+	* help
+	* ls
+	* mb
+	* rb
+	* mv
+	* cp
+	* rm
+
+	
+    	1. help - Help	
+			aws s3 help       => Get general help about using s3 cli
+			aws s3 cp help    => Get help on 'cp' command
+	
+   
+    	2. ls - List existing buckets in your account
+	
+			aws s3 ls  <S3Uri> or NONE
+				[--recursive]
+				[--page-size <value>]
+				[--human-readable]
+				[--summarize]
+				[--request-payer <value>]
+			
+			aws s3 ls
+			aws s3 ls s3://ykrdemo
+			aws s3 ls s3://ykrdemo --recursive
+			aws s3 ls s3://ykrdemo --recursive --summarize
+			aws s3 ls s3://ykrdemo --recursive --summarize --human-readable
+   
+   
+	3. mb - Create a bucket	
+				
+			aws s3 mb s3://ykrdemo1
+			aws s3 mb s3://ykrdemo2 --region us-west-1
+		
+		
+	4. rb - Remove an empty bucket  (use --force to remove non-empty bucket)	
+		
+			aws s3 rb s3://ykrdemo1
+			aws s3 rb s3://ykrdemo1 --force
+		
+		
+	5. cp - Copy objects between S3 and Local file system and also from S3 to S3		
+			S3 => Local Path, Local Path => S3, S3 => S3
+				
+		*** Run the following command to see several options that you can use with cp command:
+			aws s3 cp help
+		
+				
+		Copy single local file to s3
+			aws s3 cp test.txt s3://ykrdemo/test2.txt
+			aws s3 cp test.txt s3://ykrdemo/test2.txt --expires 2014-10-01T20:30:00Z
+			
+			aws s3 cp ./data/file1.txt s3://ykrdemo
+			
+		Copy a local directory to s3	
+			aws s3 cp ./data/retail/categories s3://ykrdemo/retail/categories --recursive
+			
+		Copy a mulitple local directories to s3
+			aws s3 cp ./data/retail s3://ykrdemo/retail --recursive
+			
+		Copy a single file from s3 to a local directory
+			aws s3 cp s3://ykrdemo/retail/categories/part-00000 ./s3tmp/categories/
+			
+		Copy multiple directories from s3 path to local path
+			aws s3 cp s3://ykrdemo/retail/ .\s3tmp\retail\ --recursive
+			
+		Copy from one s3 bucket to another s3 bucket	
+			aws s3 cp s3://ykrdemo/retail/ s3://ykrdemo2/retail/ --recursive
+			
+		Copy ONLY ".log" files from one s3 bucket to another s3 bucket	
+			aws s3 cp s3://ykrdemo/logs/ s3://ykrdemo/logs/ --recursive --exclude "*" --include "*.log"
+		
+		Copy all files EXCEPT ".log" files from one s3 bucket to another s3 bucket	
+			aws s3 cp s3://ykrdemo/logs/ s3://ykrdemo/logs/ --recursive --exclude "*.log"		
+			
+	6. rm - Delete an S3 object.
+	
+			aws s3 rm s3://ykrdemo2/retail/categories/part-00000
+			aws s3 rm s3://ykrdemo2/retail/customers/ --recursive
+			aws s3 rm s3://ykrdemo2/ --recursive
+			
+	7. mv - Move a local file or S3 object to another location locally or in S3.
+	
+			aws s3 mv s3://ykrdemo/retail/customers/ s3://ykrdemo2/retail/customers/ --recursive
+
+
+
+
+
+
+
+
+
+
+
+
+
+	
+
+
+
+
+

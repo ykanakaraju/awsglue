@@ -1,0 +1,58 @@
+  
+  Lab 4: Lambda function to prevent a specific type of files from being uploaded to s3
+  ------------------------------------------------------------------------------------
+
+	*** Script: cts-lambda-s3-delete.py ***
+
+	1. Create a new IAM Role (or update an existing role) as follows:
+		
+		Name: CTSLambdaDemoRole
+		Service: lambda
+		Policies: CloudWatchFullAccess, AmazonS3FullAccess				
+
+	2. Open Amazon S3 management console and create a bucket (or use an exiting one):
+		
+		* ctsdemo-input-data
+
+	3. Open a separate AWS Lambda console window and click on 'Create new function' button
+
+	4. Enter following details:
+		
+		* Author from scratch
+		* Function name: cts-lambda-s3-delete
+		* Runtime: Python 3.9
+		* Architecture: x86_64
+		* Permissions: Click on 'Change default execution role' link
+			Select 'Use an existing role' option 
+			Select role created in step 1
+		* Advanced settings : leave defaults
+
+	5. Click on 'Create function' button after enter all the above details
+
+	6. In the function details page, click on the 'Code' tab 
+
+	7. Put the code from the "cts-lambda-s3-delete.py" script and click on 'Deploy' button.
+	   
+	8. Lets add source S3 bucket as a trigger for the lambda function. Do the following:
+		
+		* Click on 'Add trigger' button in the 'Function overview' section. 
+		* Select a source: select 'S3' as the source from the dropdown
+		* Bucket: Select your source bucket (i.e s3/ctsdemo-input-data in this case)
+		* Event type: All object creation events
+		* Suffix: .py
+		* Recursive invocation: Check
+		* Click on 'Add' button
+
+	9. Now, upload some files with .py extension (i.e python files) to the source bucket.
+	
+		
+        * Here the lambda is invoke when you upload a file with .py extension. 
+	* The function, is then deleting the file, preventing you from uploading any .py files into the bucket
+	* If you upload files with any other extension, the function won't be invoked. 
+	
+
+
+
+
+
+

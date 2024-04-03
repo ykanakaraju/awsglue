@@ -1,0 +1,45 @@
+  
+  Lab 1: S3 Cross Region Replication
+  ----------------------------------
+
+	1. Create an S3 bucket from AWS MC (name: ctsdemo)
+
+	2. Enable version control on the buckets
+	
+		2.1 Select the bucket
+		2.2 Properties -> Bucket Versioning -> Edit -> Enable
+		
+	3. Upload some objects to the bucket
+
+		3.1 Objects -> Upload -> [ Drag and drop directories & files ]
+		3.2 Click 'Upload' button to upload.	
+		
+	4. Enable "S3 Cross-Region Replication" for fault tolerance
+
+		By enabling 'Cross-Region Replication' we can have a copy of the s3 bucket 
+		or objects within the bucket in some other Region.
+
+		4.1 Create an additional bucket in a different region (ctsdemo-copy in us-east-2 region)
+		4.2 Create a role by the name S3FullAccessRole with AmazonS3FullAccess policy.
+		4.3 Go to the bucket (ctsdemo in my case).
+		4.4 Click on Management and go to Replication rules.
+		4.5 Click on Create replication rule and enter details:
+
+			  * Replication rule name: ctsdemo replication
+			  * Status: Enabled
+			  * Choose a Rule Scope: Apply to all objects in the bucket
+			  * Destination: Choose a bucket in this account
+			  * Bucket name: ctsdemo-copy
+
+			  NOTE: Make sure to enable versioning on the destination bucket.
+			  Destination storage class: <You can specify the storage class for replicated objects>
+
+	5. Now add a few new objects in the source S3 bucket. Those objects will be replicated in the destination bucket
+		
+		NOTE: The replication takes little time (few minutes some times)
+
+
+
+
+
+

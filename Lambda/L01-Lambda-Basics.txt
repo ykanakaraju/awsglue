@@ -1,0 +1,53 @@
+  
+  Lab 1: Lambda Basics
+  --------------------
+
+	*** Script: cts-lambda-basics.py ***
+
+	1. Create a new IAM Role as follows:
+		
+		Name: CTSLambdaDemoRole
+		Service: lambda
+		Policies: CloudWatchFullAccess
+
+	2. Open AWS Lambda console and click on 'Create new function' button
+
+	3. Enter following details:
+		
+		* Author from scratch
+		* Function name: cts-lambda-basics
+		* Runtime: Python 3.9
+		* Architecture: x86_64
+		* Permissions: Click on 'Change default execution role' link
+			Select 'Use an existing role' option 
+			Select role created in step 1
+		* Advanced settings : leave defaults
+
+	4. Click on 'Create function' button after enter all the above details
+
+	5. In the function details page, click on the 'Code' tab 
+
+	6. Put the code from the "cts-lambda-basics.py" script and click on 'Deploy' button.
+
+	7. Configure a test event to test the code as follows:
+		
+		* Click on the "Test" tab
+		* Event name: cts-lambda-basics-test
+		* Leave everything as defaults and click on 'Save' button
+
+	8. Click again on the 'Code' tab and test the function.
+		
+		8.1 Click on 'Test' button. 
+		
+		This will run the function and shows the execution results in a separate tab. 
+
+	9. Open the CloudWatch console and check for the log messages. 
+
+	10. Examine and understand 'Configurations' of your function. 
+
+
+
+
+
+
+
