@@ -1,0 +1,342 @@
+
+  Agenda - AWS Glue
+  -----------------   
+   1. PySpark & SparkSQL Basics
+   2. AWS Basics & AWS Infra		
+   3. Amazon S3				
+   4. AWS Lambda			
+   5. AWS Glue				
+   6. AWS Athena 			
+   7. Project (CDC)
+
+
+  Course Materials
+  ----------------
+    -> PDF Presentations
+    -> Code Modules, Instructions, Scripts, Notebooks
+    -> Class Notes
+    -> Github: 	https://github.com/ykanakaraju/awsglue
+
+
+  Spark
+  -----
+   -> Spark is an in-memory distributed computing framework for performing big data analytics.
+
+   -> Spark is written in SCALA language
+
+   -> Spark is a polyglot
+	-> Scala, Java, Python, R (and SQL)
+
+   -> Spark has unified stack for data analytics
+
+   -> Spark APIs
+	-> Spark Core API  : Low-level API. Uses RDDs
+	-> Spark SQL	   : Structured/semi-structured data processing (Batch)
+	-> Spark Streaming : DStreams API, Structured streaming
+	-> Spark MLLib	   : Predictive analytics using ML
+	-> Spark GraphX	   : Graph Processing   
+
+    -> Spark can run on multiple cluster managers
+	-> local, Spark standalone, YARN, Mesos, Kubernetes 
+
+
+   Spark Architecture
+   ------------------
+
+    	1. Cluster Manager (CM)
+		-> Applications are submitted to CMs
+		-> Allocates containers for lauching driver and executors on the cluster. 
+		-> Spark supports multiple CMs
+			-> local, standalone, YARN, Mesos, Kubernetes		
+
+	2. Driver
+		-> Master process
+		-> Runs the 'SparkContext' object
+		-> Manages the user code and sends the tasks to the executors as per the code. 
+
+		Deploy Modes:
+		-> Where to run the driver process
+		1. Client : default, driver runs on the client. 
+		2. Cluster: driver runs on one of the nodes on the cluster.
+
+	3. SparkContext
+		-> Is an application context
+		-> Starting point of execution
+		-> Is the link between the driver and tasks running on the executors
+
+	4. Executors
+		-> receives the tasks from the Driver
+		-> all tasks run the same execution code but on different partitions of the data
+		-> the status of tasks are reported to the driver. 
+
+
+   Getting started with Spark on Databricks
+   -----------------------------------------   
+   ** Databricks Community Edition (free edition)
+ 		
+	Signup: https://www.databricks.com/try-databricks
+		Screen 1: Fill up the details with valid email address
+		Screen 2: Click on "Get started with Community Edition" link (Not the 'Continue' button)
+
+	Login: https://community.cloud.databricks.com/login.html
+
+	Downloading a file from Databricks
+	----------------------------------
+		/FileStore/<FILEPATH>
+		https://community.cloud.databricks.com/files/<FILEPATH>?o=1072576993312365
+
+		Example:
+		dbfs:/FileStore/output/wc/part-00000
+		https://community.cloud.databricks.com/files/output/wc/part-00000?o=1072576993312365
+
+
+	Enabling DBFS File browser
+	--------------------------
+	<your account (top-right)> -> Settings -> Advanced -> Other -> DBFS File Browser (enable it)
+
+
+  Spark SQL
+  ---------
+	  
+       	-> High Level API built on top of Spark Core
+	-> Structured data processing API
+
+	File Formats : Parquet (default), ORC, JSON, CSV (delimited text), Text
+	JDBC Format  : RDBMS, NoSQL
+	Hive Format  : Hive Warehouse
+
+
+
+  SparkSession
+  ------------
+	-> Starting point of execution in Spark SQL functionality
+	-> Represents a user session (SparkSession) running inside an application (SparkContext)
+	-> Each SparkSession can have its own configuration
+
+	spark = SparkSession \
+    		.builder \
+    		.appName("Basic Dataframe Operations") \
+    		.config("spark.master", "local") \
+    		.getOrCreate()	
+
+
+   DataFrame (DF)
+   --------------
+	-> Main data abstraction of Spark SQL
+
+	-> Is a collection of distributed in-memory partitions
+	-> Immutable
+	-> Lazily evaluated
+
+	-> DataFrame is a collection of "Row" objects.
+
+	-> DataFrame contains two components:
+		-> Data    : Collection of 'Row' objects
+		-> Schema  : StructType object
+
+			StructType(
+			   [
+				StructField('age', LongType(), True), 
+				StructField('gender', StringType(), True), 
+				StructField('name', StringType(), True), 
+				StructField('phone', StringType(), True), 
+				StructField('userid', LongType(), True)
+			   ]
+			)
+
+
+
+   Basic steps in creating a Spark SQL Application
+   -----------------------------------------------
+
+	1. Read/load data from some data-source into a DataFrame
+
+ 		inputPath = "E:\\PySpark\\data\\users.json"
+		df1 = spark.read.format("json").load(inputPath)
+		df1 = spark.read.load(inputPath, format="json")
+		df1 = spark.read.json(inputPath)
+
+		df1.show()
+		df1.printSchema()
+
+
+	2. Transform the DF using DF transformation methods or using SQL
+
+	        Using DF transformation methods
+		--------------------------------
+		df2 = df1.select("userid", "name", "age", "gender", "phone") \
+        		.where("age is not null") \
+        		.orderBy("gender", "age") \
+        		.groupBy("age").count() \
+        		.limit(4)
+
+
+		Using SQL
+		---------
+		df1.createOrReplaceTempView("users")
+		spark.catalog.listTables()
+
+		qry = """select age, count(*) as count
+			from users
+			where age is not null
+			group by age
+			order by age
+			limit 4"""
+					
+		df3 = spark.sql(qry)
+		df3.show()
+
+
+	3. Save the dataframe into some external destination (such as files/databases/hive etc)
+
+		df3.write.format("json").save(outputPath)
+		df3.write.save(outputPath, format="json")
+		df3.write.json(outputPath)
+
+		df3.write.json(outputPath, mode="overwrite")
+
+
+  Save Modes
+  ----------
+    -> Control the behaviour when saving a DF into an existing directory.
+
+	1. errorIfExists (default)
+	2. ignore
+	3. append
+	4. overwrite
+
+	df3.write.mode("overwrite").json(outputPath)
+	df3.write.json(outputPath, mode="overwrite")
+
+
+  LocalTempViews & GlobalTempViews
+  --------------------------------
+	LocalTempView 
+	   -> Local to a specific SparkSession
+	   -> Created using createOrReplaceTempView command
+		df1.createOrReplaceTempView("users")
+
+
+	GlobalTempView
+	   -> Can be accessed from multiple SparkSessions within the application
+	   -> Tied to "global_temp" database
+	   -> Created using createOrReplaceGlobalTempView command
+		df1.createOrReplaceGlobalTempView("gusers")
+
+
+ Working with different file formats
+  -----------------------------------
+
+  JSON
+	read
+		df1 = spark.read.format("json").load(inputPath)
+		df1 = spark.read.load(inputPath, format="json")
+		df1 = spark.read.json(inputPath)
+
+	write
+		df3.write.format("json").save(outputPath)
+		df3.write.save(outputPath, format="json")
+		df3.write.json(outputPath)	
+
+  Parquet (default)
+	read
+		df1 = spark.read.format("parquet").load(inputPath)
+		df1 = spark.read.load(inputPath, format="parquet")
+		df1 = spark.read.parquet(inputPath)
+
+	write
+		df3.write.format("parquet").save(outputPath)
+		df3.write.save(outputPath, format="parquet")
+		df3.write.parquet(outputPath)
+
+
+   ORC
+	read
+		df1 = spark.read.format("orc").load(inputPath)
+		df1 = spark.read.load(inputPath, format="orc")
+		df1 = spark.read.orc(inputPath)
+
+	write
+		df3.write.format("orc").save(outputPath)
+		df3.write.save(outputPath, format="orc")
+		df3.write.orc(outputPath)
+
+
+   CSV (delimited text)
+
+	read
+		df1 = spark.read.format("csv").option("header", True).option("inferSchema", True).load(inputPath)
+		df1 = spark.read.format("csv").load(inputPath, header=True, inferSchema=True)
+		df1 = spark.read.csv(inputPath, header=True, inferSchema=True)
+		df1 = spark.read.csv(inputPath, header=True, inferSchema=True, sep="|")
+
+	write
+		df3.write.format("csv").save(outputPath, header=True)
+		df2.write.csv(outputPath, header=True)
+		df2.write.csv(outputPath, header=True, sep="|", mode="overwrite")
+
+   Text
+	read
+		df1 = spark.read.text(inputPath)
+		=> df1 will have one columns called 'value' of 'string' type
+
+	write
+		df1.write.text(outputPath)
+		=> You can only save a DF with a single text column in 'text' format.
+
+
+
+
+
+ DF Transformation methods
+ --------------------------
+
+  1. select
+
+
+  2. where / filter
+
+
+  3. orderBy
+
+
+  4. groupBy
+
+
+  5. limit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+		
+
+
+	
+
+
+	
+
+
+
+
+
+
+
+
+	
