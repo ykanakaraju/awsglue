@@ -1,0 +1,60 @@
+
+  Agenda - AWS Glue (32 hours)
+  ----------------------------   
+   1. PySpark & SparkSQL
+   2. AWS Basics & AWS Infra		
+   3. Amazon S3				
+   4. AWS Lambda			
+   5. AWS Glue				
+   6. AWS Athena 			
+   7. Project (CDC)
+
+  Course Materials
+  ----------------
+    -> PDF Presentations
+    -> Code Modules, Instructions, Scripts, Notebooks
+    -> Class Notes
+    -> Github: 	https://github.com/ykanakaraju/awsglue 
+
+  Spark
+  -----
+   -> Spark is an in-memory distributed computing framework for performing big data analytics.
+
+   -> Spark is written in SCALA language
+
+   -> Spark is a polyglot
+	-> Scala, Java, Python, R (and SQL)
+
+   -> Spark has unified stack for data analytics
+
+   -> Spark APIs
+	-> Spark Core API  : Low-level API. Uses RDDs
+	-> Spark SQL	   : Structured/semi-structured data processing (Batch)
+	-> Spark Streaming : DStreams API, Structured streaming
+	-> Spark MLLib	   : Predictive analytics using ML
+	-> Spark GraphX	   : Graph Processing   
+
+    -> Spark can run on multiple cluster managers
+	-> local, Spark standalone, YARN, Mesos, Kubernetes 
+
+
+   Getting started with Spark on Databricks
+   ----------------------------------------
+   ** Databricks Community Edition (free edition)
+ 		
+	Signup: https://www.databricks.com/try-databricks
+		Click on "Click here" link (@ bottom-right corner)
+		==> Looking for Databricks Community Edition? Click here
+
+		Provide valid email id.
+
+		Enter the verificaton code sent to the email. You will be logged in to Databricks.
+
+	Login: https://community.cloud.databricks.com/login.html
+
+	
+	Enabling DBFS File browser
+	--------------------------
+	<your account (top-right)> -> Settings -> Advanced -> Other -> DBFS File Browser (enable it)
+
+
