@@ -41,7 +41,6 @@
 	-> local, Spark standalone, YARN, Mesos, Kubernetes 
 
 
-
    Spark Architecture
    ------------------
 
@@ -72,6 +71,55 @@
 		-> the status of tasks are reported to the driver. 
 
 	
+
+
+   Getting started with Spark on Databricks
+   ----------------------------------------
+   ** Databricks Community Edition (free edition)
+ 		
+	Signup: https://www.databricks.com/try-databricks
+		-> Click on Try Databricks link @ top-right corner
+		
+		Click on "Click here" link (@ bottom-right corner)
+		==> Looking for Databricks Community Edition? Click here
+
+	Login: https://community.cloud.databricks.com/login.html
+
+	Downloading a file from Databricks
+	----------------------------------
+		/FileStore/<FILEPATH>
+		https://community.cloud.databricks.com/files/<FILEPATH>?o=1072576993312365
+
+		Example:
+		dbfs:/FileStore/output/wc/part-00000
+		https://community.cloud.databricks.com/files/output/wc/part-00000?o=1072576993312365
+
+	Enabling DBFS File browser
+	--------------------------
+	<your account (top-right)> -> Settings -> Advanced -> Other -> DBFS File Browser (enable it)
+
+
+
+  RDD (Resilient Distributed Dataset)
+  -----------------------------------
+	-> RDD is the fundamental data abstraction of Spark
+
+	-> RDD is a collection of distributed in-memory partitions.
+	    -> Each partition is a collection of objects of some type.
+
+	-> RDDs are immutable
+
+	-> RDDs are lazily evaluated
+	   -> Transformations does not cause execution.
+	   -> Action commands trigger execution. 
+
+
+
+   Creating RDDs
+   -------------
+
+	--> continue from here
+
 
 
 
