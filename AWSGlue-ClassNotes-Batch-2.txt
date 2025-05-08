@@ -272,9 +272,32 @@
 		df3.write.json(outputPath, mode="overwrite")
 
 
+  Save Modes
+  ----------
+    -> Control the behaviour when saving a DF into an existing directory.
+
+	1. errorIfExists (default)
+	2. ignore
+	3. append
+	4. overwrite
+
+	df3.write.mode("overwrite").json(outputPath)
+	df3.write.json(outputPath, mode="overwrite")
 
 
+  LocalTempViews & GlobalTempViews
+  --------------------------------
+	LocalTempView 
+	   -> Local to a specific SparkSession
+	   -> Created using createOrReplaceTempView command
+		df1.createOrReplaceTempView("users")
 
+
+	GlobalTempView
+	   -> Can be accessed from multiple SparkSessions within the application
+	   -> Tied to "global_temp" database
+	   -> Created using createOrReplaceGlobalTempView command
+		df1.createOrReplaceGlobalTempView("gusers")
 
 
 
