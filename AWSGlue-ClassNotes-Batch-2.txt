@@ -514,4 +514,97 @@
   15. join   -> discussed separatly
 
 
+  Joins
+  -----
+	Supported Joins: inner, left, right, full, left_semi, left_anti, cross
+
+
+	left_semi Join
+	--------------
+	Is similar to inner join but the data is fetched only from the left table.
+
+	Equivalent to the following sub-query:
+	
+	     select * from emp where deptid in (select id from dept)
+
+
+	left_anti Join
+	--------------
+	Equivalent to the following sub-query:
+	
+	     select * from emp where deptid not in (select id from dept)
+
+
+	SQL Way
+	-------
+	employee = spark.createDataFrame([
+		(1, "Raju", 25, 101),
+		(2, "Ramesh", 26, 101),
+		(3, "Amrita", 30, 102),
+		(4, "Madhu", 32, 102),
+		(5, "Aditya", 28, 102),
+		(6, "Pranav", 28, 100)])\
+	  .toDF("id", "name", "age", "deptid")
+	  
+	department = spark.createDataFrame([
+		(101, "IT", 1),
+		(102, "ITES", 1),
+		(103, "Opearation", 1),
+		(104, "HRD", 2)])\
+	  .toDF("id", "deptname", "locationid")
+
+	employee.show()
+	department.show()
+
+	spark.catalog.listTables()
+
+	employee.createOrReplaceTempView("emp")
+	department.createOrReplaceTempView("dept")
+
+	qry = """select emp.*, dept.*
+		 from emp join dept
+		 on emp.deptid = dept.id"""
+
+	joinedDf = spark.sql(qry)
+
+	joinedDf.show()
+
+
+	DF Transformation method
+        ------------------------
+	joinCol = employee.deptid == department.id
+	joinedDf = employee.join(department, joinCol, "full")
+	joinedDf.show()
+
+
+
+  Case-Study  
+  -----------
+   datasets: https://github.com/ykanakaraju/awsglue/tree/main/pyspark/data/movielens
+
+   From movies.csv and ratings.csv files, fetch the top 10 movies with heighest average user rating.
+	-> Consider only those movies with atleast 50 ratings
+	-> Data: movieId, title, totalRatings, averageRating
+	-> Arrange the data in the DESC order of averageRating
+	-> Round the averageRating to 4 decimal places
+	-> Save the output as a single pipe-separated CSV file with header. 
+	-> Use DF transformation methods only.
+
+
+  Signup for AWS free account
+  ---------------------------
+
+     Signup: https://aws.amazon.com/free/
+
+	-> Sign in with a valid email address
+	-> Provide your credit card details
+
+     Services that cmes for free during the trial period:
+
+	https://aws.amazon.com/free => go through documentation in this page.
+
+     Sign-in:  https://signin.aws.amazon.com/signin
+
+
+
 
