@@ -13,27 +13,35 @@
 	* Create a Glue Job and Run it
 	* Verify the Results in Redshift Query Editor.
 	
-
 	
  1. Create an S3 bucket and load the data files into it.	
  -> Bucket: iquiz.demo1
    (here we are using CSV files with header - users.csv, users2.csv, users3.csv)
 
  2. Create a Redshift cluster and create a table.	
-	2.1 Create a new Redshift cluster and wait until it comes 'Available' status
+    2.1 Create an IAM role for 'Redshift - Customized' with the following policies:
+			AmazonAthenaFullAccess
+			AmazonRedshiftAllCommandsFullAccess 
+			AmazonS3FullAccess
+			AWSGlueConsoleFullAccess 
+			
+	2.2 Create a new Redshift cluster and wait until it comes 'Available' status
 		-> Cluster configuration
 		Cluster identifier: demo-cluster-1
-		What are you planning to use this cluster for?  Free trial
+		Choose the size of the cluster? I will choose
+		Node type: dc2.large (choose the lowest configuration)
+		Number of nodes: 1
 		-> Database configurations
 		Admin user name: demoadmin
-		Admin user password: Demoadmin123
+		Manually add the admin password => Admin user password: Demoadmin123
+		Associated IAM roles -> associate role created in 2.1
 		
 	**** Note down the "JDBC URL" which is needed later. ****
 	
-	2.2 Open the Query Editor v2 console
-	2.3 Create a Schema (name: demo1)
+	2.3 Open the Query Editor v2 console
+	2.4 Create a Schema (name: demo1)
 		-> Option is available under "Create" dropdown in the Query Editor
-	2.4 Create a table under this schema. 
+	2.5 Create a table under this schema. 
 		-> Execute the following query.
 		-> Your table name should be <schema>.<table-name>
 
@@ -47,16 +55,16 @@
 		-> Classifier type and properties : CSV
 		-> 'Create'
 		
- 4. Add a Glue database to be used with the crawlers.	
+ 4. Add a Glue databases to be used with the crawlers.	
 	4.1 Click on 'Databases' menu option
 	4.2 Click on 'Add database' button 
 	4.3 Provide a name and click on 'Create'
-		-> Name: s3-redshift-db
+		-> Name: s3-db, redshift-db
 		
  5. Create a Crawler to crawl the S3 bucket created in step 1.
 	5.1 Click on 'Crawlers' menu option and click on 'Create Crawler' button
 	5.2 Crawler Details
-		-> Name: s3-crawler 
+		-> Name: s3-crawler & redshift-crawler
 		-> 'Next'
 	5.3 Data source configuration
 		-> Is your data already mapped to Glue tables?  Not yet		
@@ -88,8 +96,8 @@
 	7.1 Click the "Connections" menu option
 	7.2  Click on "Create connection" button and add the following details:
 		-> Name: redshift-connection
-		-> Connection type : Amazon Redshift
-		-> Database instances : demo-cluster-1 (created in step 2)
+		-> Connection type : JDBC
+		-> JDBC URL: <jdbc url - step 2>
 		-> Database name: dev
 		-> Username: demoadmin
 		-> Password: Demoadmin123
@@ -118,8 +126,7 @@
 		9.3.2 Click on the 'Redshift Cluster' (target) on the graph & set the following:
 			-> Database: s3-redshift-db
 			-> Table: dev_demo1_users
-		9.3.3 Click on the 'Apply mappings' (transform) on the graph and make sure the mapping are correct.
-			
+		9.3.3 Click on the 'Apply mappings' (transform) on the graph and make sure the mapping are correct.			
 		9.3.4 Go to Job details tab
 			-> Name: s3-redshift-job
 			-> IAM Role: AWSGlueServiceRole-CSVRedshift
@@ -134,3 +141,50 @@
 	9.4 Click on 'Save'
 	9.5 Click on 'Run' button
 		
+
+
+==========================================
+ Optional : Using Redshift Spectrum
+==========================================
+
+Ref URL: https://docs.aws.amazon.com/redshift/latest/dg/c-getting-started-using-spectrum.html
+
+ Step 1. Create an IAM role for Amazon Redshift
+ 
+ Step 2: Associate the IAM role with your cluster
+ 
+	-> These two steps are already done in the above lab
+
+ Step 3: Create an external schema and an external table
+ 
+	3.1 Open the Query Editor v2 console and run the following command
+	
+		create external schema spectrum_schema 
+		from data catalog 
+		database 'spectrum_db' 
+		iam_role '<REDSHIFT_CLUSTER_ROLE_ARN>'
+		create external database if not exists;
+		
+	3.2 Create an external table
+	
+		create external table spectrum_schema.categories
+		(
+			cat_id integer,
+			type integer,
+			category varchar(100)
+		)
+		row format delimited
+		fields terminated by ','
+		stored as textfile
+		location 's3://ykr-datasets/retail_db/categories/'
+		table properties ('numRows'='100');
+
+ Step 4: Query your data in Amazon S3
+ 
+	4.1 Run the following command
+		
+		select * from spectrum_schema.categories
+
+
+
+
