@@ -1,0 +1,58 @@
+  
+  Lab 4: Lambda function to insert an item into a DynamoDB table using boto3
+  --------------------------------------------------------------------------
+
+	*** Script: cts-lambda-s3-ddb.py ***
+
+
+	1. Open S3 conosle and create a new bucket (or you can use an existing one also)
+		bucket name: ctsdemo-input-data
+
+	        ** We are going to use this bucket as source to load data into DynamoDB table
+		** A Lambda function reads the data from CSV files uploaded into this bucket and inserts them as items into DynamoDB table
+
+	2. Create a new IAM Role as follows:
+		
+		Name: CTSLambdaDemoRole
+		Service: lambda
+		Policies: CloudWatchFullAccess, AmazonDynamoDBFullAccess, AmazonS3FullAccess
+
+	3. Open AWS Lambda console and click on 'Create new function' button
+
+	4. Enter following details:
+		
+		* Author from scratch
+		* Function name: cts-lambda-s3-ddb
+		* Runtime: Python 3.9
+		* Architecture: x86_64
+		* Permissions: Click on 'Change default execution role' link
+			Select 'Use an existing role' option 
+			Select role created in step 1
+		* Advanced settings : leave defaults
+
+	5. Click on 'Create function' button after enter all the above details
+
+	6. In the function details page, click on the 'Code' tab 
+
+	7. Put the code from the "cts-lambda-s3-ddb.py" script and click on 'Deploy' button.
+
+	8. Lets add source S3 bucket as a trigger for the lambda function. Do the following:
+		
+		* Click on 'Add trigger' button in the 'Function overview' section. 
+		* Select a source: select 'S3' as the source from the dropdown
+		* Bucket: Select your source bucket (i.e s3/ctsdemo-input-data in this case)
+		* Event type: All object creation events
+		* Suffix: .csv
+		* Recursive invocation: Check
+		* Click on 'Add' button
+
+	7. Now, as you add CSV files (that are compatible with the DyDB table), the lambda will be triggered.
+	   The function will read the content of the CSV file and insert (upserts) the records into the DyDB table.
+
+	
+
+
+
+
+
+
